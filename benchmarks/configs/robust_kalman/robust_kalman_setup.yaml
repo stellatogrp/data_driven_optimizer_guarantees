@@ -1,0 +1,16 @@
+rollout_length: 1 #100
+num_rollouts: 1100
+T: 50
+mu: 2
+rho: 2
+gamma: .05
+solve_acc_abs: 1e-4
+solve_acc_rel: 0
+dt: .5 #.5
+sigma: .5
+p: 0.1
+# N_train: 100
+# N_test: 20
+w_noise_var: .1
+y_noise_var: .1
+B_const: 1

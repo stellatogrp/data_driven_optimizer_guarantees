@@ -1,0 +1,95 @@
+nn_cfg:
+  lr: 1e-2
+  method: adam
+  intermediate_layer_sizes: [500, 500]
+  batch_size: 2
+  epochs: 1e6
+  decay_lr: .1
+  min_lr: 1e-7
+  decay_every: 1e7
+
+plateau_decay:
+  min_lr: 1e-7
+  decay_factor: 5
+  avg_window_size: 10 # in epochs
+  tolerance: 1e-4
+  patience: 2
+
+
+pretrain:
+  pretrain_method: adam
+  pretrain_stepsize: 1e-3
+  pretrain_iters: 0
+  pretrain_batches: 10
+
+data:
+  datetime: ''
+
+
+eval_unrolls: 200
+eval_every_x_epochs: 10
+save_every_x_epochs: 1
+test_every_x_epochs: 10
+write_csv_every_x_batches: 1
+N_train: 1000
+N_test: 1000
+num_samples_test: 1000
+num_samples_train: 1000
+angle_anchors: [0]
+
+plot_iterates: [0, 10, 20]
+loss_method: 'fixed_k' #'fixed_k' #'constant_sum'
+share_all: False
+num_clusters: 2000
+pretrain_alpha: False
+normalize_inputs: True
+normalize_alpha: 'other'
+epochs_jit: 2
+accuracies: [1, .1, .03, .01, .001, .0001]
+iterates_visualize: [15]
+
+rho_x: 1
+scale: 1
+alpha_relax: 1
+
+
+# solve_c_num: 1000
+save_weights_flag: True
+# load_weights_datetime: '2023-12-31/14-54-18'
+# nn_load_type: stochastic
+vis_num: 25
+supervised: False
+train_unrolls: 15
+skip_startup: False
+
+sigma_nn: [0.0, 0.01, .1, 1, 10]
+# sigma_beta: [.01, .1, 1]
+pac_bayes_num_samples: 5
+pac_bayes_flag: False
+
+pac_bayes_cfg:
+  init_var: 1e-3
+  c: 10.0
+  b: 100
+  delta: 0.0001
+  rep: True
+  penalty_coeff: 0.6
+  deterministic: False
+  target_pen: 0.3
+  frac_solved_accs: [0.1, 0.01, 0.001, 0.0001] #fp_full #fp_full #[0.1, 0.01, 0.03, 0.001, 0.0001]
+
+# output_datetimes: 
+# 8/2
+# output_datetimes: ['2023-07-27/21-38-45', '2023-07-27/21-59-54', '2023-08-02/14-41-25', '2023-08-02/14-52-11', '2023-08-02/15-10-41',
+# '2023-07-27/22-14-14', '2023-07-27/22-23-07', '2023-07-27/22-24-52', '2023-08-02/15-11-56', '2023-08-02/15-13-09']
+
+# obj: ['2023-07-27/14-40-49', '2023-07-23/16-05-40', '2023-07-23/14-44-55', '2023-07-23/16-18-11', '2023-07-23/16-30-17',
+# reg: '2023-07-23/16-33-31', '2023-07-23/14-44-10', '2023-07-23/13-48-13', '2023-07-27/15-01-47', '2023-07-27/15-02-50']
+
+#5: '2023-05-22/14-22-20'
+#15: '2023-05-22/14-23-18'
+#30: '2023-05-22/15-25-55'
+#60: '2023-05-22/15-29-14'
+#120: '2023-05-22/16-37-55'
+#1: '2023-05-22/16-43-06'
+custom_loss: False

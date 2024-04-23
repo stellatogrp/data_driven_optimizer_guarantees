@@ -1,0 +1,12 @@
+n_orig: 20
+# solve_acc_abs: 1e-10
+# solve_acc_rel: 0
+split_factor: 100
+N_train: 100000
+N_test: 10
+seed: 42
+solve: True
+A_scale: 1
+c_min: -10
+c_max: 10
+P_split: 10
