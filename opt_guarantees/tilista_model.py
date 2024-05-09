@@ -9,14 +9,14 @@ from opt_guarantees.algo_steps import (
     k_steps_eval_tilista,
     k_steps_train_tilista,
 )
-from opt_guarantees.l2ws_model import L2WSmodel
+from opt_guarantees.l2o_model import L2Omodel
 from opt_guarantees.utils.nn_utils import (
     calculate_pinsker_penalty,
     compute_single_param_KL,
 )
 
 
-class TILISTAmodel(L2WSmodel):
+class TILISTAmodel(L2Omodel):
     def __init__(self, **kwargs):
         super(TILISTAmodel, self).__init__(**kwargs)
 
@@ -148,7 +148,7 @@ class TILISTAmodel(L2WSmodel):
         pi_pen = jnp.log(jnp.pi ** 2 * num_groups * N_train / (6 * delta))
         log_pen = 0
         for i in range(num_groups):
-            curr_lambd = jnp.clip(jnp.exp(rounded_priors[i]), a_max=c)
+            # curr_lambd = jnp.clip(jnp.exp(rounded_priors[i]), a_max=c)
             log_pen += 0 #2 * jnp.log(b * jnp.log((c+1e-6) / curr_lambd))
 
         # calculate the KL penalty

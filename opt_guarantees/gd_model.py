@@ -1,10 +1,10 @@
 from functools import partial
 
 from opt_guarantees.algo_steps import k_steps_eval_gd, k_steps_train_gd
-from opt_guarantees.l2ws_model import L2WSmodel
+from opt_guarantees.l2o_model import L2Omodel
 
 
-class GDmodel(L2WSmodel):
+class GDmodel(L2Omodel):
     def __init__(self, **kwargs):
         super(GDmodel, self).__init__(**kwargs)
 

@@ -4,10 +4,10 @@ from opt_guarantees.algo_steps import (
     k_steps_eval_ista,
     k_steps_train_ista,
 )
-from opt_guarantees.l2ws_model import L2WSmodel
+from opt_guarantees.l2o_model import L2Omodel
 
 
-class ISTAmodel(L2WSmodel):
+class ISTAmodel(L2Omodel):
     def __init__(self, **kwargs):
         super(ISTAmodel, self).__init__(**kwargs)
 

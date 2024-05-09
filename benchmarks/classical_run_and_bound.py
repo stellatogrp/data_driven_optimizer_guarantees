@@ -6,9 +6,6 @@ import opt_guarantees.examples.lasso as lasso
 import opt_guarantees.examples.mnist as mnist
 import opt_guarantees.examples.quadcopter as quadcopter
 import opt_guarantees.examples.robust_kalman as robust_kalman
-import opt_guarantees.examples.sine as sine
-import opt_guarantees.examples.sparse_coding as sparse_coding
-import opt_guarantees.examples.unconstrained_qp as unconstrained_qp
 from opt_guarantees.utils.data_utils import copy_data_file, recover_last_datetime
 
 
@@ -76,10 +73,6 @@ if __name__ == '__main__':
         sys.argv[1] = base + 'robust_kalman/train_outputs/${now:%Y-%m-%d}/${now:%H-%M-%S}'
         sys.argv = [sys.argv[0], sys.argv[1]]
         main_run_robust_kalman()
-    elif sys.argv[1] == 'lasso':
-        sys.argv[1] = base + 'lasso/train_outputs/${now:%Y-%m-%d}/${now:%H-%M-%S}'
-        sys.argv = [sys.argv[0], sys.argv[1]]
-        main_run_lasso()
     elif sys.argv[1] == 'quadcopter':
         sys.argv[1] = base + 'quadcopter/train_outputs/${now:%Y-%m-%d}/${now:%H-%M-%S}'
         sys.argv = [sys.argv[0], sys.argv[1]]

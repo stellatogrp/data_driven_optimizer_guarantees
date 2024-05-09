@@ -1,9 +1,7 @@
 from functools import partial
 
-import cvxpy as cp
 import jax.numpy as jnp
 import jax.scipy as jsp
-from cvxpylayers.jax import CvxpyLayer
 from jax import grad, jit, lax, vmap
 from jax.tree_util import tree_map
 
@@ -11,19 +9,6 @@ from opt_guarantees.utils.generic_utils import python_fori_loop, unvec_symm, vec
 
 TAU_FACTOR = 1 #10
 
-
-# def fixed_point_extragrad(z, Q, R, A, c, b, eg_step):
-#     """
-#     applies the extragradient fixed point operator
-#     """
-#     m, n = A.shape
-#     x0 = z[:n]
-#     y0 = z[n:]
-#     x1 = x0 - eg_step * (2 * Q @ x0 + A.T @ y0 + c)
-#     y1 = y0 + eg_step * (-2 * R @ y0 + A @ x0 - b)
-#     x2 = x0 - eg_step * (2 * Q @ x1 + A.T @ y1 + c)
-#     y2 = y0 + eg_step * (-2 * R @ y1 + A @ x1 - b)
-#     return jnp.concatenate([x2, y2])
 
 def k_steps_train_maml(k, z0, q, neural_net_fwd, neural_net_grad, gamma, supervised, z_star, jit):
     iter_losses = jnp.zeros(k)
@@ -47,7 +32,7 @@ def k_steps_train_maml(k, z0, q, neural_net_fwd, neural_net_grad, gamma, supervi
 
 
 def k_steps_eval_maml(k, z0, q, neural_net_fwd, neural_net_grad, gamma, supervised, z_star, jit):
-    iter_losses, obj_diffs = jnp.zeros(k), jnp.zeros(k)
+    iter_losses = jnp.zeros(k)
     # z_all_plus_1 = jnp.zeros((k + 1, z0.size))
     # z_all_plus_1 = z_all_plus_1.at[0, :].set(z0)
     fp_eval_partial = partial(fp_eval_maml,
@@ -74,45 +59,19 @@ def fixed_point_maml(z, neural_net_grad, theta, gamma):
     """
     theta is the problem data
     """
-    # return soft_threshold(z - gamma * W.T.dot(D.dot(z) - b), theta)
-
-    # gain
-    # gain = gain_gate(z, theta, mu, nu)
-    # z_gain = jnp.multiply(gain, z)
-    # z_tilde = fixed_point_alista(z_gain, W, D, b, gamma, theta)
-
-    # # overshoot
-    # overshoot = overshoot_gate(z, z_tilde, a)
-    # z_next = jnp.multiply(overshoot, z_tilde) + jnp.multiply((1 - overshoot), z)
-    # return z_next
-    # curr_loss = neural_net_fwd(z, theta)
     gradient, aux_data = neural_net_grad(z, theta)
-    # for i in range(len(z)):
 
-    # import pdb
-    # pdb.set_trace()
-    #     z_next = z - gamma * gradient
-    # z_next = z
-    # z_next = [tuple(z_elem - gamma * grad_elem for z_elem, grad_elem in zip(z_tuple, grad_tuple))
-    #                 for z_tuple, grad_tuple in zip(z, gradient)
-    #             ]
-    inner_sgd_fn = lambda g, state: (state - gamma*g)
+    def inner_sgd_fn(g, state):
+        return state - gamma * g
     z_next = tree_map(inner_sgd_fn, gradient, z)
     return z_next
 
 
 def fp_train_maml(i, val, supervised, z_star, neural_net_fwd, neural_net_grad, theta, gamma):
     z, loss_vec = val
-    # gamma = params[i, 0] #jnp.exp(params[i, 0])
-    # theta = params[i, 1] #jnp.exp(params[i, 1])
-    # mu = params[i, 2]
-    # nu = params[i, 3]
-    # a = params[i, 4]
-    z_next = fixed_point_maml(z, neural_net_grad, theta, gamma)
-    # diff = jnp.linalg.norm(z - z_star) ** 2
 
-    # z_star is all of the points
-    # loss = neural_net_fwd(z_next, z_star)
+    z_next = fixed_point_maml(z, neural_net_grad, theta, gamma)
+
     loss, aux = neural_net_fwd(z, z_star)
 
     loss_vec = loss_vec.at[i].set(loss)
@@ -262,25 +221,7 @@ def kl_inv_fn(r, q, c):
 #     return pen + q * jnp.log(q / p) + (1 - q) * jnp.log((1 - q) / (1 - p)) - c
 
 
-def create_kl_inv_layer():
-    """
-    create the cvxpylayer
-    """
-    p = cp.Variable(2)
-    q_param = cp.Parameter(2)
-    c_param = cp.Parameter(1)
 
-    constraints = [c_param >= cp.sum(cp.kl_div(q_param, p)), 
-                   0 <= p[0], p[0] <= 1, p[1] == 1.0 - p[0]]
-    objective = cp.Maximize(p[0])
-    problem = cp.Problem(objective, constraints)
-    assert problem.is_dpp()
-
-    layer = CvxpyLayer(
-        problem, parameters=[q_param, c_param], variables=[p]
-    )
-
-    return layer
 
 
 def k_steps_train_lista_cpss(k, z0, q, params, D, supervised, z_star, jit):
@@ -859,7 +800,8 @@ def k_steps_train_osqp(k, z0, q, factor, A, rho, sigma, supervised, z_star, jit)
     return z_final, iter_losses
 
 
-def k_steps_eval_osqp(k, z0, q, factor, P, A, rho, sigma, supervised, z_star, jit, custom_loss=None):
+def k_steps_eval_osqp(k, z0, q, factor, P, A, rho, sigma, supervised, z_star, jit, 
+                      custom_loss=None):
     iter_losses = jnp.zeros(k)
     m, n = A.shape
 
@@ -906,7 +848,8 @@ def fp_train_osqp(i, val, supervised, z_star, factor, A, q, rho, sigma):
     return z_next, loss_vec
 
 
-def fp_eval_osqp(i, val, supervised, z_star, factor, P, A, q, rho, sigma, custom_loss=None, lightweight=False):
+def fp_eval_osqp(i, val, supervised, z_star, factor, P, A, q, rho, sigma, 
+                 custom_loss=None, lightweight=False):
     m, n = A.shape
     z, loss_vec, z_all, primal_residuals, dual_residuals = val
     z_next = fixed_point_osqp(z, factor, A, q, rho, sigma)

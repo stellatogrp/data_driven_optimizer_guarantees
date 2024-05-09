@@ -6,16 +6,16 @@ import jax.numpy as jnp
 import matplotlib.pyplot as plt
 import numpy as np
 
-from data_driven_optimizer_guarantees.algo_steps import (
+from opt_guarantees.algo_steps import (
     create_M,
     create_projection_fn,
     get_scaled_vec_and_factor,
     k_steps_train_scs,
     lin_sys_solve,
 )
-from data_driven_optimizer_guarantees.examples.robust_kalman import multiple_random_robust_kalman
-from data_driven_optimizer_guarantees.examples.sparse_pca import multiple_random_sparse_pca
-from data_driven_optimizer_guarantees.scs_problem import scs_jax
+from opt_guarantees.examples.robust_kalman import multiple_random_robust_kalman
+from opt_guarantees.examples.sparse_pca import multiple_random_sparse_pca
+from opt_guarantees.scs_problem import scs_jax
 
 plt.rcParams.update({
     "text.usetex": True,
@@ -49,7 +49,7 @@ def contractive_plot():
     fp_res_hsde = sol_hsde['fixed_point_residuals']
     beta = (fp_res_hsde[200] / fp_res_hsde[100]) ** (.01)
 
-    deltas = [1,10]
+    deltas = [1, 10]
     for delta in deltas:
         perturbed = fp_res_hsde + delta * beta ** np.arange(max_iters)
         # plt.plot(perturbed)
@@ -77,10 +77,10 @@ def linearly_regular_plot():
     # plt.plot(fp_res_hsde)
     beta = (fp_res_hsde[200] / fp_res_hsde[100]) ** (.01)
 
-    deltas = [.1,1]
+    deltas = [.1, 1]
     for delta in deltas:
         perturbed = np.zeros(max_iters)
-        gen = fp_res_hsde + delta #* beta ** np.arange(max_iters)
+        gen = fp_res_hsde + delta  # * beta ** np.arange(max_iters)
         perturbed[0] = gen[0]
         for i in range(1, max_iters):
             if perturbed[i - 1] * beta < gen[i]:
@@ -99,7 +99,7 @@ def averaged_plot():
         n_orig=30, k=10, r=10, N=5)
     m, n = A.shape
     # c, d = q_mat[0, :n], q_mat[0, n:]
-    
+
     rho_x, scale, _, max_iters = 1, 1, 1, 500
 
     zero_cone_size = cones['z']
@@ -120,23 +120,22 @@ def averaged_plot():
     z_star = None
     z0 = jnp.ones(m + n + 1)
     q_mat[0, :]
-    eval_out = k_steps_train_scs(2000, z0, q_r, factor, supervised, z_star, 
+    eval_out = k_steps_train_scs(2000, z0, q_r, factor, supervised, z_star,
                                  proj, jit, hsde, m, n, zero_cone_size)
     z_star, iter_losses = eval_out
 
     supervised = True
     z0 = jnp.ones(m + n + 1)
-    eval_out_sup = k_steps_train_scs(max_iters, z0, q_r, factor, supervised, z_star, 
+    eval_out_sup = k_steps_train_scs(max_iters, z0, q_r, factor, supervised, z_star,
                                      proj, jit, hsde, m, n, zero_cone_size)
     z_final, opt_losses = eval_out_sup
 
     supervised = False
-    eval_out = k_steps_train_scs(max_iters, z0, q_r, factor, supervised, z_star, 
+    eval_out = k_steps_train_scs(max_iters, z0, q_r, factor, supervised, z_star,
                                  proj, jit, hsde, m, n, zero_cone_size)
     z_star, iter_losses = eval_out
     import pdb
     pdb.set_trace()
-
 
 
 def create_toy_example(gif=False):
@@ -148,25 +147,26 @@ def create_toy_example(gif=False):
     """
     a, b = 0, 0
     coeff = 10
+
     def f(x):
-        return coeff * (x[0] - a) ** 2 + (x[1] - b) ** 2 #+ x[1] * x[0]
-    
+        return coeff * (x[0] - a) ** 2 + (x[1] - b) ** 2  # + x[1] * x[0]
+
     grad = jax.grad(f)
 
     # setup x_inits
     init_dist = 10
     theta1 = 105 * (np.pi/180)
     theta2 = 10 * (np.pi/180)
-    x_inits = [init_dist * jnp.array([-jnp.sqrt(2) / 2, -np.sqrt(2) / 2]), 
-            #    init_dist * jnp.array([1.0, 0.0]), 
-            #    init_dist * jnp.array([jnp.sqrt(3) / 2, 0.5]), 
+    x_inits = [init_dist * jnp.array([-jnp.sqrt(2) / 2, -np.sqrt(2) / 2]),
+               #    init_dist * jnp.array([1.0, 0.0]),
+               #    init_dist * jnp.array([jnp.sqrt(3) / 2, 0.5]),
                init_dist * jnp.array([np.cos(theta1), np.sin(theta1)]),
                init_dist * jnp.array([np.cos(theta2), np.sin(theta2)])]
     m = 1
     L = 20
     num_steps = 50
     num_steps_display = 5
-    step_size= 2 / (m + L) #1 / coeff, 10
+    step_size = 2 / (m + L)  # 1 / coeff, 10
 
     x_hists = []
     fp_res_list = []
@@ -207,10 +207,10 @@ def create_toy_example(gif=False):
     # turn off axes and show xstar
     # plt.scatter(0, 0)
     plt.scatter(np.zeros(1), np.zeros(1), marker='x', color='black', s=1000)
-    ax.text(-1.5, -1, r'$z^\star$', fontsize=48, verticalalignment='center', 
+    ax.text(-1.5, -1, r'$z^\star$', fontsize=48, verticalalignment='center',
             horizontalalignment='center')
     plt.axis('off')
-    
+
     plt.tight_layout()
     plt.savefig("motivating_example/paths.pdf")
     plt.clf()
@@ -227,8 +227,6 @@ def create_toy_example(gif=False):
     plt.savefig("motivating_example/fp_res.pdf")
     plt.clf()
 
-
-
     # plot both
     fig, axs = plt.subplots(1, 2, figsize=(10, 5))
     linestyles = ['--', ':', '-.']
@@ -243,7 +241,7 @@ def create_toy_example(gif=False):
         # axs[0].plot(*zip(*x_hist[:num_steps_display]), linestyle='--', marker='o',
         #         markersize=10, markerfacecolor='none', color=colors[i])
         axs[0].plot(*zip(*x_hist[:num_steps_display]), linestyle=linestyles[i], marker='o',
-                markersize=10, markerfacecolor='none', color=colors[i])
+                    markersize=10, markerfacecolor='none', color=colors[i])
     circle1 = plt.Circle((0, 0), 10, color='k', fill=False)
     axs[0].add_patch(circle1)
     axs[0].set_aspect('equal', adjustable='box')
@@ -251,7 +249,7 @@ def create_toy_example(gif=False):
     # turn off axes and show xstar
     # plt.scatter(0, 0)
     axs[0].scatter(np.zeros(1), np.zeros(1), marker='*', color='black', s=500)
-    axs[0].text(-2, -1, r'$z^\star$', fontsize=24, verticalalignment='center', 
+    axs[0].text(-2, -1, r'$z^\star$', fontsize=24, verticalalignment='center',
                 horizontalalignment='center')
     axs[0].axis('off')
 
@@ -278,8 +276,9 @@ def create_toy_example(gif=False):
     z_mat = np.reshape(z_vec, (400, 400))
     levels = np.linspace(0, 1100, 6)
     # axs[0].contour(x, y, z_mat, levels=levels, colors='gray', linestyles='dotted')
-    axs[0].contour(x, y, z_mat, levels=levels, cmap='Blues', linestyles='dotted')
-    
+    axs[0].contour(x, y, z_mat, levels=levels,
+                   cmap='Blues', linestyles='dotted')
+
     # axs[0].tight_layout()
 
     # next plot the fp res
@@ -294,16 +293,15 @@ def create_toy_example(gif=False):
     plt.savefig("motivating_example/paths_and_fp_res.pdf")
     plt.clf()
 
-
     if gif:
         # create the plots at each iteration
         # if not exis
         # os.mkdir('motivating_example')
         filenames = []
-        
+
         for j in range(len(x_hists[0])):
             fig, ax = plt.subplots(figsize=(16, 9))
-            
+
             for i in range(len(x_hists)):
                 x_hist = x_hists[i]
                 # ax.plot(*zip(*x_hist), linestyle='--', marker='o',
@@ -311,9 +309,9 @@ def create_toy_example(gif=False):
                 ax.set_xlim([-11, 11])  # Set limits for the X-axis
                 ax.set_ylim([-11, 11])
                 ax.scatter(x_hist[j][0], x_hist[j][1], s=100, color=colors[i])
-                
-                        #    linestyle='--', marker='o',
-                        # markersize=10, markerfacecolor='none', 
+
+                #    linestyle='--', marker='o',
+                # markersize=10, markerfacecolor='none',
             circle1 = plt.Circle((0, 0), 10, color='k', fill=False)
             ax.add_patch(circle1)
             ax.set_aspect('equal', adjustable='box')
@@ -335,13 +333,11 @@ def create_toy_example(gif=False):
 
         # Optimal solution
         # ax.scatter(*zip(x_star), marker='*', s=600, color='k')
-        
 
         # ax.set_xlim([x_min, x_max])
         # ax.set_ylim([y_min, y_max])
         # ax.set_xticks([])
         # ax.set_yticks([])
-        
 
 
 def run_prox_gd(x_init, grad, step_size, num_steps):
@@ -353,7 +349,7 @@ def run_prox_gd(x_init, grad, step_size, num_steps):
         x = jnp.clip(x - step_size * grad(x), a_min=0)
         x_hist.append(x)
         # if i > 0:
-        
+
         fp_res[i] = np.linalg.norm(x - x_prev)
         print(fp_res)
     return x_hist, fp_res
@@ -364,23 +360,22 @@ def combine_gifs():
     import numpy as np
     from PIL import Image, ImageDraw, ImageFont
 
-    #Create reader object for the gif
+    # Create reader object for the gif
     gif1 = imageio.get_reader('rollout_2_flight_ps.gif')
     gif2 = imageio.get_reader('rollout_2_flight_nn.gif')
     gif3 = imageio.get_reader('rollout_2_flight_learned.gif')
 
-    #If they don't have the same number of frame take the shorter
-    number_of_frames = min(gif1.get_length(), gif2.get_length()) 
+    # If they don't have the same number of frame take the shorter
+    number_of_frames = min(gif1.get_length(), gif2.get_length())
 
-    #Create writer object
+    # Create writer object
     new_gif = imageio.get_writer('output.gif')
-
 
     for frame_number in range(number_of_frames):
         img1 = gif1.get_next_data()
         img2 = gif2.get_next_data()
         img3 = gif3.get_next_data()
-        #here is the magic
+        # here is the magic
         new_image = np.hstack((img1, img2, img3))
 
         # Add captions to the new_image using Pillow
@@ -396,8 +391,8 @@ def combine_gifs():
         new_gif.append_data(np.array(pil_image))
 
     gif1.close()
-    gif2.close()    
-    gif3.close() 
+    gif2.close()
+    gif3.close()
     new_gif.close()
     # from PIL import Image, ImageDraw, ImageFont
 
@@ -461,7 +456,7 @@ def combine_gifs():
 
     # # Caption for GIF 3
     # caption3 = "Caption for GIF 3"
-    # draw.text((gif1.width + gif2.width + 10, combined_height - 20), caption3, 
+    # draw.text((gif1.width + gif2.width + 10, combined_height - 20), caption3,
     #           fill="white", font=font)
 
     # # Save the combined GIF with captions

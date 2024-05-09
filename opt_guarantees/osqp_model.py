@@ -6,10 +6,10 @@ import osqp
 from scipy.sparse import csc_matrix
 
 from opt_guarantees.algo_steps import k_steps_eval_osqp, k_steps_train_osqp, unvec_symm
-from opt_guarantees.l2ws_model import L2WSmodel
+from opt_guarantees.l2o_model import L2Omodel
 
 
-class OSQPmodel(L2WSmodel):
+class OSQPmodel(L2Omodel):
     def __init__(self, **kwargs):
         super(OSQPmodel, self).__init__(**kwargs)
 

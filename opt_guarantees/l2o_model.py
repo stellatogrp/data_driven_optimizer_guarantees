@@ -1,4 +1,3 @@
-import logging
 import time
 from functools import partial
 
@@ -7,26 +6,30 @@ import numpy as np
 import optax
 from jax import jit, random, vmap
 from jax.config import config
-from jaxopt import OptaxSolver
+from jaxopt import Bisection, OptaxSolver
 
-from opt_guarantees.algo_steps import create_eval_fn, create_train_fn, lin_sys_solve, create_kl_inv_layer, kl_inv_fn
+from opt_guarantees.algo_steps import (
+    create_eval_fn,
+    create_kl_inv_layer,
+    create_train_fn,
+    kl_inv_fn,
+    lin_sys_solve,
+)
 from opt_guarantees.utils.nn_utils import (
     calculate_pinsker_penalty,
+    compute_single_param_KL,
     # calculate_total_penalty,
     get_perturbed_weights,
     init_network_params,
     init_variance_network_params,
     predict_y,
-    compute_single_param_KL
 )
-from jaxopt import Bisection
-from opt_guarantees.utils.generic_utils import manual_vmap
 
 config.update("jax_enable_x64", True)
 # config.update('jax_disable_jit', True)
 
 
-class L2WSmodel(object):
+class L2Omodel(object):
     def __init__(self, 
                  train_unrolls=5,
                  train_inputs=None,
@@ -48,9 +51,8 @@ class L2WSmodel(object):
                  algo_dict={}):
         dict = algo_dict
         self.key = 0
-        self.sigma = 0.01
         self.b = pac_bayes_cfg.get('b', 100)
-        self.c = pac_bayes_cfg.get('c', 2.0)
+        self.c = pac_bayes_cfg.get('c', 100.0)
         self.delta = pac_bayes_cfg.get('delta', 0.0001)
         self.delta2 = pac_bayes_cfg.get('delta', 0.00001)
         self.target_pen = pac_bayes_cfg['target_pen']
@@ -169,18 +171,15 @@ class L2WSmodel(object):
                                        z_star=z_star)
                 z_final, iter_losses, z_all_plus_1 = eval_out[0], eval_out[1], eval_out[2]
 
-                angles = None
-
             loss = self.final_loss(loss_method, z_final, iter_losses, supervised, z0, z_star)
 
-            # penalty_loss = calculate_total_penalty(self.N_train, params, self.b, self.c, self.delta)
-            penalty_loss = calculate_pinsker_penalty(self.N_train, params, self.b, self.c, self.delta)
+            calculate_pinsker_penalty(self.N_train, params, self.b, self.c, self.delta)
             loss = loss #+ self.penalty_coeff * penalty_loss
 
             if diff_required:
                 return loss
             else:
-                return_out = (loss, iter_losses, z_all_plus_1, angles) + eval_out[3:]
+                return_out = (loss, iter_losses, z_all_plus_1, None) + eval_out[3:]
                 return return_out
         loss_fn = self.predict_2_loss(predict, diff_required)
         return loss_fn
@@ -281,7 +280,7 @@ class L2WSmodel(object):
         return loss, out, time_per_prob
 
 
-    def initialize_neural_network(self, nn_cfg, plateau_decay, alista_cfg=None):
+    def initialize_neural_network(self, nn_cfg, plateau_decay):
         # neural network
         self.epochs, self.lr = nn_cfg.get('epochs', 10), nn_cfg.get('lr', 1e-3)
         self.decay_lr, self.min_lr = nn_cfg.get('decay_lr', False), nn_cfg.get('min_lr', 1e-7)
@@ -314,46 +313,11 @@ class L2WSmodel(object):
         layer_sizes = [input_size] + hidden_layer_sizes + [output_size]
         self.layer_sizes = layer_sizes
 
-        init_var, init_stddev_var = self.init_var, 1e-8
         self.init_params()
-        # if self.algo == 'alista':
-        #     # self.mean_params = jnp.ones((self.train_unrolls, 2))
-
-        #     # # initialize with ista values
-        #     # # alista_step = alista_cfg['step']
-        #     # # alista_eta = alista_cfg['eta']
-        #     # # self.mean_params = self.mean_params.at[:, 0].set(alista_step)
-        #     # # self.mean_params = self.mean_params.at[:, 1].set(alista_eta)
-            
-        #     # self.sigma_params = -jnp.ones((self.train_unrolls, 2)) * 10
-        #     self.init_params()
-        # elif self.algo == 'tilista':
-        #     # self.mean_params = (jnp.ones((self.train_unrolls, 2)), 
-        #     #                     jnp.ones((self.m, self.n)))
-        #     # self.mean_params = (jnp.ones((self.train_unrolls, 2)), 
-        #     #                     self.W + .001)
-        #     # self.sigma_params = (-jnp.ones((self.train_unrolls, 2)) * 10, 
-        #     #                      -jnp.ones((self.m, self.n)) * 10)
-        #     self.init_params()
-        # else:
-        #     # initialize weights of neural network
-        #     self.mean_params = init_network_params(layer_sizes, random.PRNGKey(0))
-
-        #     # initialize the stddev
-        #     self.sigma_params = init_variance_network_params(layer_sizes, init_var, random.PRNGKey(1), 
-        #                                                   init_stddev_var)
-        
-        # # initialize the prior
-        # self.prior_param = jnp.log(init_var)
-
-        # self.params = [self.mean_params, self.sigma_params, self.prior_param]
 
         # initializes the optimizer
         self.optimizer_method = nn_cfg.get('method', 'adam')
         if self.optimizer_method == 'adam':
-            # mask = [True, True, True]
-            # masked_optimizer = optax.masked(optax.adam(self.lr), mask)
-            # self.optimizer = OptaxSolver(opt=masked_optimizer, fun=self.loss_fn_train, has_aux=False)
             self.optimizer = OptaxSolver(opt=optax.adam(
                 self.lr), fun=self.loss_fn_train, has_aux=False)
         elif self.optimizer_method == 'sgd':
@@ -436,51 +400,6 @@ class L2WSmodel(object):
         self.tr_losses_batch = []
         self.te_losses = []
 
-    def decay_upon_plateau(self):
-        """
-        this method decays the learning rate upon hitting a plateau
-            on the training loss
-        self.avg_window_plateau: take the last avg_window number of epochs and compared it
-            against the previous avg_window number of epochs to compare
-        self.plateau_decay_factor: multiplicative factor we decay the learning rate by
-        self.plateau_tolerance: the tolerance condition decrease to check if we should decrease
-
-        we decay the learn rate by decay_factor if
-           self.tr_losses[-2*avg_window:-avg_window] - self.tr_losses[-avg_window:] <= tolerance
-        """
-        decay_factor = self.plateau_decay['decay_factor']
-
-        window_batches = self.plateau_decay['avg_window_size'] * self.num_batches
-        plateau_tolerance = self.plateau_decay['tolerance']
-        patience = self.plateau_decay['patience']
-
-        if self.plateau_decay['min_lr'] <= self.lr / decay_factor:
-            tr_losses_batch_np = np.array(self.tr_losses_batch)
-            prev_window_losses = tr_losses_batch_np[-2*window_batches:-window_batches].mean()
-            curr_window_losses = tr_losses_batch_np[-window_batches:].mean()
-            print('prev_window_losses', prev_window_losses)
-            print('curr_window_losses', curr_window_losses)
-            plateau = prev_window_losses - curr_window_losses <= plateau_tolerance
-            if plateau:
-                # keep track of the learning rate
-                self.lr = self.lr / decay_factor
-
-                # update the optimizer (restart) and reset the state
-                if self.optimizer_method == 'adam':
-                    self.optimizer = OptaxSolver(opt=optax.adam(
-                        self.lr), fun=self.loss_fn_train, has_aux=False)
-                elif self.optimizer_method == 'sgd':
-                    self.optimizer = OptaxSolver(opt=optax.sgd(
-                        self.lr), fun=self.loss_fn_train, has_aux=False)
-                self.state = self.optimizer.init_state(self.params)
-                logging.info(f"the decay rate is now {self.lr}")
-
-                # log the current decay epoch
-                self.epoch_decay_points.append(self.epoch)
-
-                # don't decay for another 2 * window number of epochs
-                wait_time = 2 * patience * self.plateau_decay['avg_window_size']
-                self.dont_decay_until = self.epoch + wait_time
 
     def train_full_batch(self, params, state):
         """
@@ -497,27 +416,19 @@ class L2WSmodel(object):
         if bypass_nn:
             z0 = input
         else:
-            # old stochastic
-            # perturb = get_perturbed_weights(random.PRNGKey(key), self.layer_sizes, jnp.sqrt(sigma))
-            # perturbed_weights = [(perturb[i][0] + params[i][0], 
-            #                       0*perturb[i][1] + params[i][1]) for i in range(len(params))]
-            # print('perturbed_weights', perturbed_weights)
-
             # new stochastic
-            mean_params, sigma_params, prior_var = params[0], params[1], params[2]
+            mean_params, sigma_params = params[0], params[1]
             if self.deterministic:
                 nn_output = predict_y(mean_params, input)
             else:
                 perturb = get_perturbed_weights(random.PRNGKey(key), self.layer_sizes, 1)
-                perturbed_weights = [(perturb[i][0] * jnp.sqrt(jnp.exp(sigma_params[i][0])) + mean_params[i][0], 
-                                    perturb[i][1] * jnp.sqrt(jnp.exp(sigma_params[i][1])) + mean_params[i][1]) for i in range(len(mean_params))]
-                # perturbed_weights = [(perturb[i][0] * jnp.sqrt(1 / (1 + jnp.exp(-sigma_params[i][0]))) + mean_params[i][0], 
-                #                     perturb[i][1] * jnp.sqrt(1 / (1 + jnp.exp(-sigma_params[i][1]))) + mean_params[i][1]) for i in range(len(mean_params))]
+                perturbed_weights = [(perturb[i][0] * jnp.sqrt(jnp.exp(sigma_params[i][0])) +
+                                       mean_params[i][0], 
+                                    perturb[i][1] * jnp.sqrt(jnp.exp(sigma_params[i][1])) + 
+                                    mean_params[i][1]) for i in range(len(mean_params))]
 
                 nn_output = predict_y(perturbed_weights, input)
 
-            # deterministic
-            # nn_output = predict_y(params, input)
             z0 = nn_output
         if self.algo == 'scs':
             z0_full = jnp.ones(z0.size + 1)
@@ -584,15 +495,10 @@ class L2WSmodel(object):
 
         if self.factors_required and not self.factor_static_bool:
             # for the case where the factors change for each problem
-            # batch_predict = vmap(predict,
-            #                     in_axes=(None, 0, 0, 0, None, 0),
-            #                     out_axes=out_axes)
             batch_predict = vmap(predict,
                                  in_axes=(None, 0, 0, None, 0, None, (0, 0)),
                                  out_axes=out_axes)
-            # batch_predict = vmap(predict,
-            #                      in_axes=(None, 0, 0, None, 0, (0, 0), None),
-            #                      out_axes=out_axes)
+
             @partial(jit, static_argnums=(3,))
             def loss_fn(params, inputs, b, iters, z_stars, key, factors):
                 if diff_required:
@@ -605,17 +511,6 @@ class L2WSmodel(object):
                     # loss_out = losses, iter_losses, angles, z_all
                     return losses.mean(), predict_out
 
-            # @partial(jit, static_argnums=(3,))
-            # def loss_fn(params, inputs, b, iters, z_stars, factors):
-            #     if diff_required:
-            #         losses = batch_predict(params, inputs, b, iters, z_stars, factors)
-            #         return losses.mean()
-            #     else:
-            #         predict_out = batch_predict(
-            #             params, inputs, b, iters, z_stars, factors)
-            #         losses = predict_out[0]
-            #         # loss_out = losses, iter_losses, angles, z_all
-            #         return losses.mean(), predict_out
         else:
             # for either of the following cases
             #   1. no factors are needed (pass in None as a static argument)
@@ -631,7 +526,6 @@ class L2WSmodel(object):
             def loss_fn(params, inputs, b, iters, z_stars, key):
                 if diff_required:
                     losses = batch_predict(params, inputs, b, iters, z_stars, key)
-                    # return losses.mean()
                     q = losses.mean() / self.penalty_coeff
 
                     penalty_loss = self.calculate_total_penalty(self.N_train, params, self.b, 
@@ -654,39 +548,21 @@ class L2WSmodel(object):
                     if self.deterministic:
                         return q_expit
                     return p + 1000 * (penalty_loss - self.target_pen) ** 2
-                    # return q #+ jnp.sqrt(penalty_loss / 2) + 100 * (penalty_loss - self.target_pen) ** 2
                 else:
                     predict_out = batch_predict(
                         params, inputs, b, iters, z_stars, key)
                     losses = predict_out[0]
                     # loss_out = losses, iter_losses, angles, z_all
                     return losses.mean(), predict_out
-
         return loss_fn
 
-
-    # def calculate_total_penalty(self, N_train, params, c, b, delta):
-    #     pi_pen = jnp.log(jnp.pi ** 2 * N_train / (6 * delta))
-    #     # log_pen = 2 * jnp.log(b * jnp.log(c / jnp.exp(params[2])))
-    #     log_pen = 2 * jnp.log(b * jnp.log(c / jnp.exp(params[2][0])))
-    #     # import pdb
-    #     # pdb.set_trace()
-    #     penalty_loss = self.compute_all_params_KL(params[0], params[1], 
-    #                                         params[2]) + pi_pen + log_pen
-    #     return penalty_loss /  N_train
 
     def round_priors(self, priors, lambda_max, b):
         lambd = jnp.clip(jnp.exp(priors), a_max=lambda_max)
         a = jnp.round(b * jnp.log((lambda_max + 1e-6) / lambd))
         rounded_lambd = lambda_max * jnp.exp(-a / b)
         return jnp.log(rounded_lambd)
-        # lambd = lambda_max / (1 + jnp.exp(-priors))
-        # a = jnp.round(b * jnp.log(lambda_max / lambd))
-        # rounded_lambd = lambda_max * jnp.exp(-a / b)
-        # # return jnp.log(rounded_priors)
-        # return jnp.log(rounded_lambd / (lambda_max - rounded_lambd))
-        # return rounded_lambd
-    
+
 
     def calculate_total_penalty(self, N_train, params, c, b, delta, prior=0):
         # priors are already rounded
@@ -707,7 +583,7 @@ class L2WSmodel(object):
 
 
     def compute_all_params_KL(self, mean_params, sigma_params, eta):
-        lambda_max = self.c
+        # lambda_max = self.c
         total_pen = 0
         for i, params in enumerate(mean_params):
             weight_matrix, bias_vector = params
@@ -716,7 +592,6 @@ class L2WSmodel(object):
             curr_lambd_weight = jnp.exp(eta[2*i])
             total_pen += compute_single_param_KL(weight_matrix, 
                                                  jnp.exp(weight_sigma), curr_lambd_weight)
-            # curr_lambd_bias = lambda_max / (1 + jnp.exp(-eta[2*i+1]))
             curr_lambd_bias = jnp.exp(eta[2*i+1])
             total_pen += compute_single_param_KL(bias_vector, 
                                                  jnp.exp(bias_sigma), curr_lambd_bias)
@@ -729,19 +604,18 @@ class L2WSmodel(object):
         num_weights = 0
         for i, params in enumerate(nn_weights):
             weight_matrix, bias_vector = params
-            weight_norms[i] = jnp.linalg.norm(weight_matrix) ** 2 + jnp.linalg.norm(bias_vector) ** 2
+            weight_norms[i] = jnp.linalg.norm(weight_matrix)**2 + jnp.linalg.norm(bias_vector)**2
             num_weights += weight_matrix.size + bias_vector.size
         return weight_norms.sum(), num_weights
 
     
     def calculate_avg_posterior_var(self, params):
         sigma_params = params[1]
-        flattened_params = jnp.concatenate([jnp.ravel(weight_matrix) for weight_matrix, _ in sigma_params] + 
-                                        [jnp.ravel(bias_vector) for _, bias_vector in sigma_params])
+        weight_var = [jnp.ravel(weight_matrix) for weight_matrix, _ in sigma_params]
+        bias_var = [jnp.ravel(bias_vector) for _, bias_vector in sigma_params]
+        flattened_params = jnp.concatenate(weight_var + bias_var)
         variances = jnp.exp(flattened_params)
-        # flattened_params = jnp.concatenate([jnp.ravel(weight_matrix) for weight_matrix, _ in sigma_params] + 
-        #                                 [jnp.ravel(bias_vector) for _, bias_vector in sigma_params])
-        # variances = jnp.exp(flattened_params)
+
         avg_posterior_var = variances.mean()
         stddev_posterior_var = variances.std()
         return avg_posterior_var, stddev_posterior_var

@@ -12,10 +12,10 @@ from opt_guarantees.algo_steps import (
     k_steps_eval_scs,
     k_steps_train_scs,
 )
-from opt_guarantees.l2ws_model import L2WSmodel
+from opt_guarantees.l2o_model import L2Omodel
 
 
-class SCSmodel(L2WSmodel):
+class SCSmodel(L2Omodel):
     def __init__(self, **kwargs):
         super(SCSmodel, self).__init__(**kwargs)
 

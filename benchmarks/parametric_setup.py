@@ -31,7 +31,6 @@ def main_setup_lasso(cfg):
     lasso.setup_probs(cfg)
 
 
-
 @hydra.main(config_path='configs/unconstrained_qp', config_name='unconstrained_qp_setup.yaml')
 def main_setup_unconstrained_qp(cfg):
     unconstrained_qp.setup_probs(cfg)
