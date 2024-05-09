@@ -16,22 +16,4 @@ echo "My SLURM_ARRAY_JOB_ID is $SLURM_ARRAY_JOB_ID."
 echo "My SLURM_ARRAY_TASK_ID is $SLURM_ARRAY_TASK_ID"
 echo "Executing on the machine:" $(hostname)
 
-# python benchmarks/l2ws_setup.py robust_kalman cluster
 python benchmarks/plot_genL2O.py unconstrained_qp cluster
-# python benchmarks/l2ws_train.py mnist cluster
-# python l2ws_train_script.py sparse_pca cluster
-# python gif_script.py robust_pca cluster
-# python utils/portfolio_utils.py
-# python plot_script.py unconstrained_qp cluster
-# python plot_script.py lasso cluster
-# python plot_script.py mnist cluster
-# python plot_script.py quadcopter cluster
-# python plot_script.py robust_kalman cluster
-# python plot_script.py robust_ls cluster
-# python plot_script.py phase_retrieval cluster
-# python l2ws_train_script.py quadcopter cluster
-# python l2ws_setup_script.py unconstrained_qp cluster
-#python scs_c_speed.py markowitz
-# python aggregate_slurm_runs_script.py robust_pca cluster
-
-# gpu command: #SBATCH --gres=gpu:1 
