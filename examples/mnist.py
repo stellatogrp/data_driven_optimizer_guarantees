@@ -5,7 +5,7 @@ from scipy.linalg import solve_discrete_are
 from examples.osc_mass import static_canon_osqp
 import cvxpy as cp
 import yaml
-from l2ws.launcher import Workspace
+from data_driven_optimizer_guarantees.launcher import Workspace
 import os
 from examples.solve_script import direct_osqp_setup_script
 import scipy.linalg as la

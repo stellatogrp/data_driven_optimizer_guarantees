@@ -2,23 +2,23 @@ import sys
 
 import hydra
 
-import l2ws.examples.jamming as jamming
-import l2ws.examples.lasso as lasso
-import l2ws.examples.markowitz as markowitz
-import l2ws.examples.mnist as mnist
-import l2ws.examples.mpc as mpc
-import l2ws.examples.osc_mass as osc_mass
-import l2ws.examples.phase_retrieval as phase_retrieval
-import l2ws.examples.quadcopter as quadcopter
-import l2ws.examples.robust_kalman as robust_kalman
-import l2ws.examples.robust_ls as robust_ls
-import l2ws.examples.robust_pca as robust_pca
-import l2ws.examples.sparse_pca as sparse_pca
-import l2ws.examples.sparse_coding as sparse_coding
-import l2ws.examples.sine as sine
-import l2ws.examples.unconstrained_qp as unconstrained_qp
-import l2ws.examples.vehicle as vehicle
-from l2ws.utils.data_utils import copy_data_file, recover_last_datetime
+import opt_guarantees.examples.jamming as jamming
+import opt_guarantees.examples.lasso as lasso
+import opt_guarantees.examples.markowitz as markowitz
+import opt_guarantees.examples.mnist as mnist
+import opt_guarantees.examples.mpc as mpc
+import opt_guarantees.examples.osc_mass as osc_mass
+import opt_guarantees.examples.phase_retrieval as phase_retrieval
+import opt_guarantees.examples.quadcopter as quadcopter
+import opt_guarantees.examples.robust_kalman as robust_kalman
+import opt_guarantees.examples.robust_ls as robust_ls
+import opt_guarantees.examples.robust_pca as robust_pca
+import opt_guarantees.examples.sparse_pca as sparse_pca
+import opt_guarantees.examples.sparse_coding as sparse_coding
+import opt_guarantees.examples.sine as sine
+import opt_guarantees.examples.unconstrained_qp as unconstrained_qp
+import opt_guarantees.examples.vehicle as vehicle
+from opt_guarantees.utils.data_utils import copy_data_file, recover_last_datetime
 
 
 @hydra.main(config_path='configs/markowitz', config_name='markowitz_run.yaml')

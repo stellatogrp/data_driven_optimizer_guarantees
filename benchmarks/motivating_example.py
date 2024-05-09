@@ -6,16 +6,16 @@ import jax.numpy as jnp
 import matplotlib.pyplot as plt
 import numpy as np
 
-from l2ws.algo_steps import (
+from data_driven_optimizer_guarantees.algo_steps import (
     create_M,
     create_projection_fn,
     get_scaled_vec_and_factor,
     k_steps_train_scs,
     lin_sys_solve,
 )
-from l2ws.examples.robust_kalman import multiple_random_robust_kalman
-from l2ws.examples.sparse_pca import multiple_random_sparse_pca
-from l2ws.scs_problem import scs_jax
+from data_driven_optimizer_guarantees.examples.robust_kalman import multiple_random_robust_kalman
+from data_driven_optimizer_guarantees.examples.sparse_pca import multiple_random_sparse_pca
+from data_driven_optimizer_guarantees.scs_problem import scs_jax
 
 plt.rcParams.update({
     "text.usetex": True,

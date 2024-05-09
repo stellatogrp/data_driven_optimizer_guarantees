@@ -7,7 +7,7 @@ import pandas as pd
 import yaml
 from pandas import read_csv
 
-from l2ws.utils.data_utils import recover_last_datetime
+from data_driven_optimizer_guarantees.utils.data_utils import recover_last_datetime
 
 from PEPit import PEP
 from PEPit.operators import LipschitzOperator

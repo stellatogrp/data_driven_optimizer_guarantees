@@ -7,7 +7,7 @@ from matplotlib import pyplot as plt
 
 # from scipy.ndimage import gaussian_filter
 # from scipy.optimize import differential_evolution
-from l2ws.algo_steps import kl_inv_fn
+from opt_guarantees.algo_steps import kl_inv_fn
 import numpy as np
 from mpl_toolkits.mplot3d import Axes3D
 
