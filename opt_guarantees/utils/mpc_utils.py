@@ -416,3 +416,79 @@ def static_canon_mpc_osqp(x_ref, x0, Ad, Bd, cd, T, nx, nu, x_min, x_max, u_min,
                     c=jnp.array(c),
                     A_dynamics=jnp.array(Ad))
     return out_dict
+
+
+def static_canon_osqp(T, nx, nu, x_min, x_max, u_min, u_max, Q_val, QT_val, R_val, x_ref, Ad, Bd):
+    if np.isscalar(Q_val):
+        Q = Q_val * np.eye(nx)
+    else:
+        Q = Q_val
+    if np.isscalar(Q_val):
+        QT = QT_val * np.eye(nx)
+    else:
+        QT = QT_val
+    if np.isscalar(R_val):
+        R = R_val * np.eye(nu)
+    else:
+        R = R_val
+    q = np.zeros(nx)  # np.random.normal(size=(nx))#
+    qT = np.zeros(nx)
+
+    if x_ref is None:
+        x_ref = np.zeros(nx)
+
+    # Quadratic objective
+    P = sparse.block_diag(
+        [sparse.kron(sparse.eye(T-1), Q), QT, sparse.kron(sparse.eye(T), R)],
+        format="csc",
+    )
+
+    # Linear objective
+    # c = np.hstack([np.kron(np.ones(T-1), q), qT, np.zeros(T * nu)])
+    c = np.hstack([np.kron(np.ones(T - 1), -Q @ x_ref), -QT @ x_ref, np.zeros(T * nu)])
+
+    # Linear dynamics
+    Ax = sparse.kron(sparse.eye(T + 1), -sparse.eye(nx)) + sparse.kron(
+        sparse.eye(T + 1, k=-1), Ad
+    )
+    Ax = Ax[nx:, nx:]
+    Bu = sparse.kron(
+        sparse.eye(T), Bd
+    )
+    Aeq = sparse.hstack([Ax, Bu])
+
+    A_ineq = sparse.vstack(
+        [sparse.eye(T * nx + T * nu)]
+    )
+
+    A = sparse.vstack(
+        [
+            Aeq,
+            A_ineq
+        ]
+    )
+
+    # get l, u
+    x_max_vec = np.tile(x_max, T)
+    x_min_vec = np.tile(x_min, T)
+    u_max_vec = np.tile(u_max, T)
+    u_min_vec = np.tile(u_min, T)
+
+    b_upper = np.hstack(
+        [x_max_vec, u_max_vec])
+    b_lower = np.hstack(
+        [x_min_vec, u_min_vec])
+    beq = np.zeros(T * nx)
+    l = np.hstack([beq, b_lower])
+    u = np.hstack([beq, b_upper])
+
+    cones = dict(z=T * nx, l=2 * (T * nx + T * nu))
+
+    out_dict = dict(cones=cones,
+                    A=jnp.array(A.todense()),
+                    P=jnp.array(P.todense()),
+                    l=jnp.array(l),
+                    u=jnp.array(u),
+                    c=jnp.array(c),
+                    A_dynamics=jnp.array(Ad))
+    return out_dict

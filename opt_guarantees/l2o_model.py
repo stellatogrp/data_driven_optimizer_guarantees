@@ -10,7 +10,6 @@ from jaxopt import Bisection, OptaxSolver
 
 from opt_guarantees.algo_steps import (
     create_eval_fn,
-    create_kl_inv_layer,
     create_train_fn,
     kl_inv_fn,
     lin_sys_solve,
@@ -47,7 +46,6 @@ class L2Omodel(object):
                  y_stars_train=None,
                  y_stars_test=None,
                  loss_method='fixed_k',
-                 alista_cfg=None,
                  algo_dict={}):
         dict = algo_dict
         self.key = 0
@@ -55,13 +53,11 @@ class L2Omodel(object):
         self.c = pac_bayes_cfg.get('c', 100.0)
         self.delta = pac_bayes_cfg.get('delta', 0.0001)
         self.delta2 = pac_bayes_cfg.get('delta', 0.00001)
-        self.target_pen = pac_bayes_cfg['target_pen']
+        self.target_pen = pac_bayes_cfg.get('target_pen', 0.01)
         self.init_var = pac_bayes_cfg.get('init_var', 1e-1) # initializes all of s and the prior
         self.penalty_coeff = pac_bayes_cfg.get('penalty_coeff', 1.0)
         self.deterministic = pac_bayes_cfg.get('deterministic', False)
         self.prior = 0
-
-        self.kl_inv_layer = create_kl_inv_layer()
 
         # essential pieces for the model
         self.initialize_essentials(jit, eval_unrolls, train_unrolls, train_inputs, test_inputs)
@@ -84,7 +80,7 @@ class L2Omodel(object):
         self.create_all_loss_fns(loss_method, regression)
 
         # neural network setup
-        self.initialize_neural_network(nn_cfg, plateau_decay, alista_cfg=alista_cfg)
+        self.initialize_neural_network(nn_cfg, plateau_decay) #, alista_cfg=alista_cfg)
 
         # init to track training
         self.init_train_tracking()

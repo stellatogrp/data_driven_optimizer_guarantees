@@ -2,7 +2,7 @@ import numpy as np
 import jax.numpy as jnp
 import jax.scipy as jsp
 from scipy.linalg import solve_discrete_are
-from opt_guarantees.examples.osc_mass import static_canon_osqp
+# from opt_guarantees.examples.osc_mass import static_canon_osqp
 import cvxpy as cp
 import yaml
 from opt_guarantees.launcher import Workspace
@@ -13,9 +13,8 @@ import matplotlib.pyplot as plt
 from functools import partial
 from jax import vmap
 from scipy import sparse
-from opt_guarantees.utils.mpc_utils import closed_loop_rollout, static_canon_mpc_osqp
+from opt_guarantees.utils.mpc_utils import closed_loop_rollout, static_canon_mpc_osqp, static_canon_osqp
 from opt_guarantees.algo_steps import k_steps_eval_osqp, unvec_symm, vec_symm
-import imageio
 import time
 from scipy.interpolate import splprep, splev
 

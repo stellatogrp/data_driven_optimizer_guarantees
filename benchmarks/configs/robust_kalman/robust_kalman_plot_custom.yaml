@@ -1,0 +1,17 @@
+cold_start_datetimes: 
+- 2024-05-11/22-04-34 # custom 10 samples
+- 2024-05-11/22-03-21 # custom 100 samples
+- 2024-05-11/21-48-02 # custom 1000 samples
+
+percentile_datetime: 2024-05-11/22-04-34 # gives the empirical results (use the same as the 1000 samples datetime)
+
+# values used for paper results
+eval_iters: 301
+worst_case_iters: 1e12
+risk_accs: [0.1, 0.01, 0.001]
+
+# do not change these
+percentile_ylabel: 'max Euclidean distance'
+worst_case: False 
+custom_loss: True
+accuracies: fp_full

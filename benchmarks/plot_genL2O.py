@@ -8,10 +8,11 @@ import pandas as pd
 import yaml
 from pandas import read_csv
 
-from data_driven_optimizer_guarantees.utils.data_utils import recover_last_datetime
+from opt_guarantees.utils.data_utils import recover_last_datetime
 
 from PEPit import PEP
 from PEPit.operators import LipschitzOperator
+from PEPit.examples.fixed_point_problems import krasnoselskii_mann_constant_step_sizes
 
 plt.rcParams.update({
     "text.usetex": True,
@@ -114,58 +115,92 @@ def sparse_coding_plot_eval_iters(cfg):
 
 
 def create_classical_results(example, cfg):
-    metrics, timing_data, titles = get_all_data(example, cfg, train=False)
-    eval_iters = int(cfg.eval_iters)
+    # metrics, timing_data, titles = get_all_data(example, cfg, train=False)
+    # eval_iters = int(cfg.eval_iters)
 
-    if len(titles) == 4:
-        titles[-2] = titles[-2] + '_deterministic'
-    nmse = metrics[0]
-    for i in range(len(nmse)):
-        plt.plot(nmse[i][:eval_iters],
-                 linestyle=titles_2_styles[titles[i]], 
-                 color=titles_2_colors[titles[i]],
-                 marker=titles_2_markers[titles[i]],
-                 markevery=(0, 100)
-                 )
-    plt.tight_layout()
-    plt.xlabel('evaluation steps')
-    plt.ylabel("fixed-point residual")
-    plt.yscale('log')
-    plt.savefig('fp_res.pdf', bbox_inches='tight')
-    plt.clf()
+    # if len(titles) == 4:
+    #     titles[-2] = titles[-2] + '_deterministic'
+    # nmse = metrics[0]
+    # for i in range(len(nmse)):
+    #     plt.plot(nmse[i][:eval_iters],
+    #              linestyle=titles_2_styles[titles[i]], 
+    #              color=titles_2_colors[titles[i]],
+    #              marker=titles_2_markers[titles[i]],
+    #              markevery=(0, 100)
+    #              )
+    # plt.tight_layout()
+    # plt.xlabel('iterations')
+    # plt.ylabel("fixed-point residual")
+    # plt.yscale('log')
+    # plt.savefig('fp_res.pdf', bbox_inches='tight')
+    # plt.clf()
 
     percentile_plots(example, cfg)
     risk_plots(example, cfg)
-    worst_case_gap_plot(example, cfg)
+    if cfg.worst_case:
+        worst_case_gap_plot(example, cfg)
 
 
 def worst_case_gap_plot(example, cfg):
     plt.figure(figsize=(10,6))
 
     # get the cold start results
-    metrics, timing_data, titles = get_all_data(example, cfg, train=False)
-    cold_start = metrics[0][0]
-    plt.plot(cold_start, linestyle=titles_2_styles['cold_start'], 
-                 color=titles_2_colors['cold_start'],
-                 marker=titles_2_markers['cold_start'],
-                 markevery=0.1)
+    # metrics, timing_data, titles = get_all_data(example, cfg, train=False)
+    # cold_start = metrics[0][0]
+    
+    if example == 'mnist':
+        num_steps = 8000
+    elif example == 'robust_kalman':
+        num_steps = 500
+    
 
     # get the worst case results
     z_star_max, theta_max = get_worst_case_datetime(example, cfg)
-    steps = np.arange(cold_start.size)
+    steps = np.arange(num_steps)
     worst_case = z_star_max / np.sqrt((steps + 2) / np.exp(1))
-    plt.plot(worst_case, linestyle=titles_2_styles['nearest_neighbor'], 
+    plt.plot(worst_case, label='Theoretical worst-case bound',
+             linestyle=titles_2_styles['worst'], 
+                 color=titles_2_colors['worst'],
+                 marker=titles_2_markers['worst'],
+                 markevery=0.1)
+    
+    
+    
+    cold_start_results, guarantee_results = get_frac_solved_data_classical(example, cfg)
+    # percentile_results = get_percentiles(example, cfg)
+    train = True
+    col = 'no_train'
+    percentiles = cfg.get('percentiles', [30, 50, 90, 99])
+    percentile_results = get_percentiles(example, cfg, cfg.percentile_datetime, train, col, percentiles)
+
+    cold_start_quantile = percentile_results[3][:8000]
+    print('cold_start_quantile', cold_start_quantile)
+
+    # 99th quantile
+    plt.plot(cold_start_quantile, label='Sample 99th quantile',
+             linestyle=titles_2_styles['nearest_neighbor'], 
                  color=titles_2_colors['nearest_neighbor'],
                  marker=titles_2_markers['nearest_neighbor'],
                  markevery=0.1)
 
+    # 50th quantile
+    median = percentile_results[1][:num_steps]
+    plt.plot(median, label='Sample average',
+             linestyle=titles_2_styles['cold_start'], 
+                 color=titles_2_colors['cold_start'],
+                 marker=titles_2_markers['cold_start'],
+                 markevery=0.1)
+
     # plt.tight_layout()
-    plt.xlabel('evaluation steps')
+    plt.legend(loc='lower left')
+    if example == 'mnist':
+        plt.xscale('log')
+    plt.xlabel('iterations')
     plt.ylabel("fixed-point residual")
     plt.yscale('log')
     plt.savefig('worst_case_analysis_gap.pdf', bbox_inches='tight')
     plt.clf()
-
+    return
 
 
 def get_steps(cold_start_size, eval_iters, worst_case):
@@ -230,8 +265,8 @@ def risk_plots(example, cfg):
     cold_start_size = cold_start_results[-1].size
     steps = get_steps(cold_start_size, eval_iters, cfg.worst_case)
 
-    # if cfg.worst_case:
-    z_star_max, theta_max = get_worst_case_datetime(example, cfg)
+    if cfg.worst_case:
+        z_star_max, theta_max = get_worst_case_datetime(example, cfg)
 
     acc_list, bounds_list_list = [], []
     cold_start_list, worst_list = [], []
@@ -245,8 +280,9 @@ def risk_plots(example, cfg):
             lin_conv_rate = 1.0
         else:
             lin_conv_rate = 1.0
-        worst_case_indices = get_worse_indices(z_star_max, steps, acc, lin_conv_rate, custom_loss=cfg.custom_loss)
+        
         if cfg.worst_case:
+            worst_case_indices = get_worse_indices(z_star_max, steps, acc, lin_conv_rate, custom_loss=cfg.custom_loss)
             cold_start_curve = construct_full_curve(cold_start_results[i], steps, worst_case_indices)
         else:
             cold_start_curve = cold_start_results[i][:eval_iters]
@@ -344,7 +380,7 @@ def plot_final_classical_risk_bounds_together(example, acc_list, steps, bounds_l
                         linewidth=2.0,
                         markevery=(0.05, 0.1)
                         )
-        axes[loc].set_xlabel('evaluation steps', fontsize=fontsize)
+        axes[loc].set_xlabel('iterations', fontsize=fontsize)
         
         if custom_loss:
             if example == 'robust_kalman':
@@ -393,7 +429,7 @@ def plot_final_classical_risk_bounds(acc, steps, bounds_list, cold_start, worst,
                     markevery=(0.05, 0.1)
                     )
     plt.tight_layout()
-    plt.xlabel('evaluation steps')
+    plt.xlabel('iterations')
     ylabel = r'$1 - r_{\mathcal{X}}$'
     plt.ylabel(ylabel)
     if custom_loss:
@@ -472,7 +508,7 @@ def percentile_plots(example, cfg):
         aux_results = None
 
     steps1 = np.arange(cold_start_results[-1].size)[:eval_iters]
-    z_star_max, theta_max = get_worst_case_datetime(example, cfg)
+    
 
     # fill in e_star tensor
     num_N = len(guarantee_results[0])
@@ -487,10 +523,17 @@ def percentile_plots(example, cfg):
         lin_conv_rate = 1.0
     else:
         lin_conv_rate = 1.0
-    worst = construct_worst(z_star_max, steps1, lin_conv_rate)
-
-    steps = get_steps(steps1.size, cfg.worst_case_iters, worst_case=True)
-    worst_full = construct_worst(z_star_max, steps, lin_conv_rate)
+    
+    # worst case
+    if cfg.worst_case:
+        z_star_max, theta_max = get_worst_case_datetime(example, cfg)
+        worst = construct_worst(z_star_max, steps1, lin_conv_rate)
+        steps = get_steps(steps1.size, cfg.worst_case_iters, worst_case=True)
+        worst_full = construct_worst(z_star_max, steps, lin_conv_rate)
+    else:
+        worst = None
+        worst_full = None
+        steps = get_steps(steps1.size, steps1.size, worst_case=False)
 
     cold_start_quantile_list, worst_list = [], []
     worst_full_list = []
@@ -611,7 +654,7 @@ def percentile_final_plots_together(example, percentiles, cold_start_quantile_li
             axes[k].set_yscale('log')
         if example == 'mnist':
             axes[k].set_xscale('log')
-        axes[k].set_xlabel('evaluation steps', fontsize=fontsize)
+        axes[k].set_xlabel('iterations', fontsize=fontsize)
         # axes[k].set_ylabel(ylabel)
 
         axes[loc].set_title(r'${}$th quantile bound'.format(percentile), fontsize=title_fontsize)
@@ -648,7 +691,7 @@ def percentile_final_plots(percentile, cold_start_quantile, worst, bounds_list,
                     markevery=(0.05, 0.1))
     if cold_start_quantile.min() > 0:
         plt.yscale('log')
-    plt.xlabel('evaluation steps')
+    plt.xlabel('iterations')
     plt.ylabel(ylabel)
 
     plt.title(r'${}$th quantile bound'.format(percentile))
@@ -660,46 +703,48 @@ def pep():
     gamma = 0.5
     n = 100
 
-    # Instantiate PEP
-    problem = PEP()
+    pepit_tau, theoretical_tau = krasnoselskii_mann_constant_step_sizes(n=n, gamma=gamma, verbose=1)
 
-    # Declare a non expansive operator
-    A = problem.declare_function(LipschitzOperator, L=1.)
+    # # Instantiate PEP
+    # problem = PEP()
 
-    # Start by defining its unique optimal point xs = x_*
-    xs, _, _ = A.fixed_point()
+    # # Declare a non expansive operator
+    # A = problem.declare_function(LipschitzOperator, L=1.)
 
-    # Then define the starting point x0 of the algorithm
-    x0 = problem.set_initial_point()
+    # # Start by defining its unique optimal point xs = x_*
+    # xs, _, _ = A.fixed_point()
 
-    # Set the initial constraint that is the difference between x0 and xs
-    problem.set_initial_condition((x0 - xs) ** 2 <= 1)
+    # # Then define the starting point x0 of the algorithm
+    # x0 = problem.set_initial_point()
 
-    x = x0
-    for i in range(n):
-        x = (1 - gamma) * x + gamma * A.gradient(x)
+    # # Set the initial constraint that is the difference between x0 and xs
+    # problem.set_initial_condition((x0 - xs) ** 2 <= 1)
 
-    # Set the performance metric to distance between xN and AxN
-    problem.set_performance_metric((1 / 2 * (x - A.gradient(x))) ** 2)
+    # x = x0
+    # for i in range(n):
+    #     x = (1 - gamma) * x + gamma * A.gradient(x)
 
-    # Solve the PEP
-    verbose = 1
-    pepit_verbose = max(verbose, 0)
-    pepit_tau = problem.solve(verbose=pepit_verbose)
+    # # Set the performance metric to distance between xN and AxN
+    # problem.set_performance_metric((1 / 2 * (x - A.gradient(x))) ** 2)
 
-    # Compute theoretical guarantee (for comparison)
-    if 1 / 2 <= gamma <= 1 / 2 * (1 + np.sqrt(n / (n + 1))):
-        theoretical_tau = 1 / (n + 1) * (n / (n + 1)) ** n / (4 * gamma * (1 - gamma))
-    elif 1 / 2 * (1 + np.sqrt(n / (n + 1))) < gamma <= 1:
-        theoretical_tau = (2 * gamma - 1) ** (2 * n)
-    else:
-        raise ValueError("{} is not a valid value for the step-size \'gamma\'."
-                         " \'gamma\' must be a number between 1/2 and 1".format(gamma))
+    # # Solve the PEP
+    # verbose = 1
+    # pepit_verbose = max(verbose, 0)
+    # pepit_tau = problem.solve(verbose=pepit_verbose)
 
-    # Print conclusion if required
-    print('*** Example file: worst-case performance of Kranoselskii-Mann iterations ***')
-    print('\tPEPit guarantee:\t 1/4||xN - AxN||^2 <= {:.6} ||x0 - x_*||^2'.format(pepit_tau))
-    print('\tTheoretical guarantee:\t 1/4||xN - AxN||^2 <= {:.6} ||x0 - x_*||^2'.format(theoretical_tau))
+    # # Compute theoretical guarantee (for comparison)
+    # if 1 / 2 <= gamma <= 1 / 2 * (1 + np.sqrt(n / (n + 1))):
+    #     theoretical_tau = 1 / (n + 1) * (n / (n + 1)) ** n / (4 * gamma * (1 - gamma))
+    # elif 1 / 2 * (1 + np.sqrt(n / (n + 1))) < gamma <= 1:
+    #     theoretical_tau = (2 * gamma - 1) ** (2 * n)
+    # else:
+    #     raise ValueError("{} is not a valid value for the step-size \'gamma\'."
+    #                      " \'gamma\' must be a number between 1/2 and 1".format(gamma))
+
+    # # Print conclusion if required
+    # print('*** Example file: worst-case performance of Kranoselskii-Mann iterations ***')
+    # print('\tPEPit guarantee:\t 1/4||xN - AxN||^2 <= {:.6} ||x0 - x_*||^2'.format(pepit_tau))
+    # print('\tTheoretical guarantee:\t 1/4||xN - AxN||^2 <= {:.6} ||x0 - x_*||^2'.format(theoretical_tau))
 
 
 
@@ -745,7 +790,7 @@ def create_gen_l2o_results(example, cfg):
                  markevery=(0, 100)
                  )
     plt.tight_layout()
-    plt.xlabel('evaluation steps')
+    plt.xlabel('iterations')
     plt.ylabel("fixed-point residual")
     plt.yscale('log')
     plt.savefig('fp_res.pdf', bbox_inches='tight')
@@ -819,7 +864,7 @@ def create_gen_l2o_results(example, cfg):
                      markevery=0.1,
                      marker=markers[1])
         plt.tight_layout()
-        plt.xlabel('evaluation steps')
+        plt.xlabel('iterations')
         plt.xscale('log')
         plt.ylabel(f"frac. at {acc} fp res")
         plt.savefig(f"acc_{acc}.pdf", bbox_inches='tight')
@@ -976,11 +1021,12 @@ def create_tables_classical(example, steps, percentiles, cold_start_quantile_lis
             if example == 'quadcopter':
                 nearest_neighbor_vals[j] = get_cutoff_tol(aux_quantile_list[i], tols[j])
 
-            worst_cutoff = get_cutoff_tol(worst_curve, tols[j])
-            print('worst_cutoff', worst_cutoff)
-            print('steps', steps)
-            if worst_cutoff is not None:
-                worst_vals[j] = steps[worst_cutoff]
+            if worst_curve is not None:
+                worst_cutoff = get_cutoff_tol(worst_curve, tols[j])
+                print('worst_cutoff', worst_cutoff)
+                print('steps', steps)
+                if worst_cutoff is not None:
+                    worst_vals[j] = steps[worst_cutoff]
 
             # iterate over the bounds
             
@@ -1194,7 +1240,7 @@ def learned_percentile_final_plots_together(example, percentiles, cold_start_qua
                         # markevery=markevery)
         if cold_start_quantile.min() > 0:
             axes[k].set_yscale('log')
-        axes[k].set_xlabel('evaluation steps', fontsize=fontsize)
+        axes[k].set_xlabel('iterations', fontsize=fontsize)
         axes[loc].set_title(r'${}$th quantile bound'.format(percentile), fontsize=title_fontsize)
         if example != 'unconstrained_qp':
             axes[k].xaxis.set_major_locator(MaxNLocator(integer=True))
@@ -1248,7 +1294,7 @@ def learned_percentile_final_plots(example, percentile, cold_start_quantile, sec
     #                 markevery=(0.05, 0.1))
     if cold_start_quantile.min() > 0:
         plt.yscale('log')
-    plt.xlabel('evaluation steps')
+    plt.xlabel('iterations')
     plt.ylabel(percentile_ylabel)
 
     plt.title(r'${}$th quantile bound'.format(percentile))
@@ -1258,25 +1304,6 @@ def learned_percentile_final_plots(example, percentile, cold_start_quantile, sec
     
 
 def create_gen_l2o_results_maml(example, cfg):
-    # metrics, timing_data, titles = get_all_data(example, cfg, train=False)
-
-    # if len(titles) == 4:
-    #     titles[-2] = titles[-2] + '_deterministic'
-    # nmse = metrics[0]
-    # for i in range(len(nmse)):
-    #     plt.plot(nmse[i][:cfg.eval_iters],
-    #              linestyle=titles_2_styles[titles[i]], 
-    #              color=titles_2_colors[titles[i]],
-    #              marker=titles_2_markers[titles[i]],
-    #              markevery=(0, 100)
-    #              )
-    # plt.tight_layout()
-    # plt.xlabel('evaluation steps')
-    # plt.ylabel("fixed-point residual")
-    # plt.yscale('log')
-    # plt.savefig('fp_res.pdf', bbox_inches='tight')
-    # plt.clf()
-
     out = get_frac_solved_data(example, cfg)
     all_test_results, all_pac_bayes_results, cold_start_results, pretrain_results = out
 
@@ -1438,7 +1465,7 @@ def plot_final_learned_risk_bounds_together(example, plot_acc_list, steps, bound
                         linewidth=2.0,
                         markevery=(0.05, 0.1)
                         )
-        axes[loc].set_xlabel('evaluation steps', fontsize=fontsize)
+        axes[loc].set_xlabel('iterations', fontsize=fontsize)
 
         acc = round_acc(acc)
         
@@ -1529,7 +1556,7 @@ def plot_final_learned_risk_bounds(acc, steps, bounds_list, emp_list, cold_start
                     markevery=(0.05, 0.1)
                     )
     plt.tight_layout()
-    plt.xlabel('evaluation steps')
+    plt.xlabel('iterations')
     # ylabel = r'$1 - r_{\mathcal{X}}$'
     ylabel = r'$1 - R_{\mathcal{X}}(P)$'
     plt.ylabel(ylabel)
@@ -1546,66 +1573,16 @@ def plot_final_learned_risk_bounds(acc, steps, bounds_list, emp_list, cold_start
     plt.clf()
 
 
-
-@hydra.main(config_path='configs/osc_mass', config_name='osc_mass_plot.yaml')
-def osc_mass_plot_eval_iters(cfg):
-    example = 'osc_mass'
-    plot_eval_iters(example, cfg)
-
-
-@hydra.main(config_path='configs/markowitz', config_name='markowitz_plot.yaml')
-def markowitz_plot_eval_iters(cfg):
-    example = 'markowitz'
-    plot_eval_iters(example, cfg)
-
-
-@hydra.main(config_path='configs/vehicle', config_name='vehicle_plot.yaml')
-def vehicle_plot_eval_iters(cfg):
-    example = 'vehicle'
-    plot_eval_iters(example, cfg)
-
-@hydra.main(config_path='configs/robust_pca', config_name='robust_pca_plot.yaml')
-def robust_pca_plot_eval_iters(cfg):
-    example = 'robust_pca'
-    plot_eval_iters(example, cfg)
-
-
-@hydra.main(config_path='configs/robust_kalman', config_name='robust_kalman_plot.yaml')
-def robust_kalman_plot_eval_iters(cfg):
+@hydra.main(config_path='configs/robust_kalman', config_name='robust_kalman_plot_fp.yaml')
+def robust_kalman_plot_eval_iters_fp(cfg):
     example = 'robust_kalman'
-    # plot_eval_iters(example, cfg, train=False)
-    # overlay_training_losses(example, cfg)
-    # create_journal_results(example, cfg, train=False)
     create_classical_results(example, cfg)
 
 
-@hydra.main(config_path='configs/robust_ls', config_name='robust_ls_plot.yaml')
-def robust_ls_plot_eval_iters(cfg):
-    example = 'robust_ls'
-    # overlay_training_losses(example, cfg)
-    # # plot_eval_iters(example, cfg, train=False)
-    # create_journal_results(example, cfg, train=False)
-    create_gen_l2o_results(example, cfg)
-
-
-@hydra.main(config_path='configs/sparse_pca', config_name='sparse_pca_plot.yaml')
-def sparse_pca_plot_eval_iters(cfg):
-    example = 'sparse_pca'
-    overlay_training_losses(example, cfg)
-    # plot_eval_iters(example, cfg, train=False)
-    create_journal_results(example, cfg, train=False)
-
-
-@hydra.main(config_path='configs/lasso', config_name='lasso_plot.yaml')
-def lasso_plot_eval_iters(cfg):
-    example = 'lasso'
-    # overlay_training_losses(example, cfg)
-    # # plot_eval_iters(example, cfg, train=False)
-    # create_journal_results(example, cfg, train=False)
-
-    # create_gen_l2o_results(example, cfg)
+@hydra.main(config_path='configs/robust_kalman', config_name='robust_kalman_plot_custom.yaml')
+def robust_kalman_plot_eval_iters_custom(cfg):
+    example = 'robust_kalman'
     create_classical_results(example, cfg)
-
 
 @hydra.main(config_path='configs/unconstrained_qp', config_name='unconstrained_qp_plot.yaml')
 def unconstrained_qp_plot_eval_iters(cfg):
@@ -2314,10 +2291,6 @@ def update_acc(df_acc, accs, col, losses):
     return df_acc
 
 
-def second_derivative_fn(x):
-    dydx = np.diff(x)
-    dy2d2x = np.diff(dydx)
-    return dy2d2x
 
 
 if __name__ == '__main__':
@@ -2325,38 +2298,14 @@ if __name__ == '__main__':
         base = 'hydra.run.dir=/scratch/gpfs/rajivs/learn2warmstart/outputs/'
     elif sys.argv[2] == 'local':
         base = 'hydra.run.dir=outputs/'
-    if sys.argv[1] == 'markowitz':
-        sys.argv[1] = base + 'markowitz/plots/${now:%Y-%m-%d}/${now:%H-%M-%S}'
-        sys.argv = [sys.argv[0], sys.argv[1]]
-        markowitz_plot_eval_iters()
-    elif sys.argv[1] == 'osc_mass':
-        sys.argv[1] = base + 'osc_mass/plots/${now:%Y-%m-%d}/${now:%H-%M-%S}'
-        sys.argv = [sys.argv[0], sys.argv[1]]
-        osc_mass_plot_eval_iters()
-    elif sys.argv[1] == 'vehicle':
-        sys.argv[1] = base + 'vehicle/plots/${now:%Y-%m-%d}/${now:%H-%M-%S}'
-        sys.argv = [sys.argv[0], sys.argv[1]]
-        vehicle_plot_eval_iters()
-    elif sys.argv[1] == 'robust_kalman':
+    if sys.argv[1] == 'robust_kalman_fp':
         sys.argv[1] = base + 'robust_kalman/plots/${now:%Y-%m-%d}/${now:%H-%M-%S}'
         sys.argv = [sys.argv[0], sys.argv[1]]
-        robust_kalman_plot_eval_iters()
-    elif sys.argv[1] == 'robust_pca':
-        sys.argv[1] = base + 'robust_pca/plots/${now:%Y-%m-%d}/${now:%H-%M-%S}'
+        robust_kalman_plot_eval_iters_fp()
+    if sys.argv[1] == 'robust_kalman_custom':
+        sys.argv[1] = base + 'robust_kalman/plots/${now:%Y-%m-%d}/${now:%H-%M-%S}'
         sys.argv = [sys.argv[0], sys.argv[1]]
-        robust_pca_plot_eval_iters()
-    elif sys.argv[1] == 'robust_ls':
-        sys.argv[1] = base + 'robust_ls/plots/${now:%Y-%m-%d}/${now:%H-%M-%S}'
-        sys.argv = [sys.argv[0], sys.argv[1]]
-        robust_ls_plot_eval_iters()
-    elif sys.argv[1] == 'sparse_pca':
-        sys.argv[1] = base + 'sparse_pca/plots/${now:%Y-%m-%d}/${now:%H-%M-%S}'
-        sys.argv = [sys.argv[0], sys.argv[1]]
-        sparse_pca_plot_eval_iters()
-    elif sys.argv[1] == 'lasso':
-        sys.argv[1] = base + 'lasso/plots/${now:%Y-%m-%d}/${now:%H-%M-%S}'
-        sys.argv = [sys.argv[0], sys.argv[1]]
-        lasso_plot_eval_iters()
+        robust_kalman_plot_eval_iters_custom()
     elif sys.argv[1] == 'unconstrained_qp':
         sys.argv[1] = base + 'unconstrained_qp/plots/${now:%Y-%m-%d}/${now:%H-%M-%S}'
         sys.argv = [sys.argv[0], sys.argv[1]]

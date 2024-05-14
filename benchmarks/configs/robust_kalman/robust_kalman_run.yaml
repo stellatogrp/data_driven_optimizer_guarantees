@@ -1,35 +1,23 @@
-eval_unrolls: 500
-eval_every_x_epochs: 10
-save_every_x_epochs: 1
-test_every_x_epochs: 10
-write_csv_every_x_batches: 1
-N_train: 1000
-N_test: 1000
-num_samples_test: 1000
-num_samples_train: 1000
+# to adjust for paper results
+N_train: 1000 # number of samples
+custom_loss: False # False is for the fixed-point residual, True for the max Euclidean distance
 
-plot_iterates: [0, 10, 20]
-accuracies: [1, .1, .03, .01, .001, .0001]
-iterates_visualize: [15]
-
-vis_num: 25
-supervised: False
-train_unrolls: 15
-skip_startup: False
-
-
-pac_bayes_num_samples: 5
-pac_bayes_flag: False
+# there is no need to change any of the values below
+data:
+  datetime: '' # gets the most recent setup data by default
+eval_unrolls: 500 # number of algorithm steps
 
 pac_bayes_cfg:
-  init_var: 1e-3
-  c: 10.0
-  b: 100
   delta: 0.0001
-  rep: True
-  penalty_coeff: 1.0
-  deterministic: False
-  target_pen: 0.3
-  frac_solved_accs: fp_full
+  gp: True # set to False if you want to use Pinsker's inequality instead of the kl inverse (the geometric program)
+  frac_solved_accs: fp_full # will get risk results for all values evenly on a log space between 10^-6 to 10^-2
 
-custom_loss: True
+classical: True # do not change
+
+# used for visualizing
+iterates_visualize: [15]
+vis_num: 25
+
+# used for logging and plotting (not very important)
+plot_iterates: [0, 10, 20]
+accuracies: [1, .1, .01, .001, .0001]

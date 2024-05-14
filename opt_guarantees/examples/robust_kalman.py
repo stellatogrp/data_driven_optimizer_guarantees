@@ -1023,8 +1023,8 @@ def setup_probs(setup_cfg):
                                ['True', 'KF recovery', 'Noisy'],
                                grayscales=[1.0, 1.0, 1.0, 1.0, 1.0],
                                filename=f"positions_plots/positions_{i}_rotated.pdf")
-        plot_positions_overlay_genL2O(y_mat[i, :, :], x_kalman_rotated,
-                                      filename=f"positions_plots/positions_{i}_genL2O.pdf")
+        # plot_positions_overlay_genL2O(y_mat[i, :, :], x_kalman_rotated,
+        #                               filename=f"positions_plots/positions_{i}_genL2O.pdf")
         # plot_positions_overlay([x_trues[i, :, :-1], x_kalman_rotated, y_mat[i, :, :]],
         #                        ['True', 'KF recovery', 'Noisy'],
         #                        filename=f"positions_plots/positions_{i}.pdf")

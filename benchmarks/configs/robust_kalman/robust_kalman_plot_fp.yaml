@@ -1,0 +1,18 @@
+cold_start_datetimes: 
+- 2024-05-14/17-25-15 # fp 10 samples
+- 2024-05-14/17-26-11 # fp 100 samples
+- 2024-05-14/17-27-15 # fp 1000 samples
+
+worst_case_datetime: 2024-05-14/17-27-15 # uses the estimated max ||z_star||_2 to create
+percentile_datetime: 2024-05-14/17-27-15 #2024-04-08/11-51-40
+
+# values used for paper results
+eval_iters: 301
+worst_case_iters: 1e12
+risk_accs: [0.1, 0.01, 0.001]
+
+# do not change these
+percentile_ylabel: 'fixed-point residual'
+worst_case: True
+custom_loss: False
+accuracies: fp_full
