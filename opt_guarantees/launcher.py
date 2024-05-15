@@ -378,7 +378,7 @@ class Workspace:
             self.m, self.n = m, n
             rho = static_dict['rho']
             input_dict = dict(factor_static_bool=True,
-                              supervised=cfg.supervised,
+                              supervised=cfg.get('supervised', False),
                               rho=rho,
                               q_mat_train=self.q_mat_train,
                               q_mat_test=self.q_mat_test,
@@ -461,8 +461,8 @@ class Workspace:
                                     eval_unrolls=self.eval_unrolls,
                                     train_inputs=self.train_inputs,
                                     test_inputs=self.test_inputs,
-                                    regression=cfg.supervised,
-                                    nn_cfg=cfg.nn_cfg,
+                                    regression=cfg.get('supervised', False),
+                                    nn_cfg=cfg.get('nn_cfg', {}),
                                     pac_bayes_cfg=cfg.pac_bayes_cfg,
                                     z_stars_train=self.z_stars_train,
                                     z_stars_test=self.z_stars_test,

@@ -42,7 +42,7 @@ def run(run_cfg):
 
     # # get the blur matrix
     dataset = setup_cfg['dataset']
-    img_size = setup_cfg['mri_size'] if dataset == 'mri' else 28
+    img_size = 28
     B = vectorized2DBlurMatrix(img_size, img_size, blur_size)
 
     # # get P, A
@@ -90,8 +90,8 @@ def setup_probs(setup_cfg):
     lambd = cfg.lambd
     # emnist = cfg.get('emnist', True)
     dataset = cfg.get('dataset')
-    mri_size = setup_cfg['mri_size']
-    img_size = mri_size if dataset == 'mri' else 28
+    # mri_size = setup_cfg['mri_size']
+    img_size = 28 #mri_size if dataset == 'mri' else 28
     deblur_or_denoise = cfg.get('deblur_or_denoise')
 
     np.random.seed(cfg.seed)
@@ -101,13 +101,13 @@ def setup_probs(setup_cfg):
 
     # setup the training
     lambd = setup_cfg['lambd']
-    lambd2 = setup_cfg['lambd2']
+    # lambd2 = setup_cfg['lambd2']
     blur_size = setup_cfg['blur_size']
     
 
     # load the mnist images
     # x_train, x_test = get_mnist(emnist=emnist)
-    x_train, x_test = get_dataset(dataset, mri_size=mri_size, num=N)
+    x_train, x_test = get_dataset(dataset, num=N)
 
     # distances = distance_matrix(
     #             x_train,

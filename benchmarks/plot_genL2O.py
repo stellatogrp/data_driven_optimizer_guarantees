@@ -1591,37 +1591,26 @@ def unconstrained_qp_plot_eval_iters(cfg):
     percentile_plots_maml(example, cfg)
     create_gen_l2o_results_maml(example, cfg)
     
-    
-    
-    # plot_eval_iters(example, cfg, train=False)
-    # create_journal_results(example, cfg, train=False)
-    # overlay_training_losses(example, cfg)
-    # create_gen_l2o_results(example, cfg)
 
 
 @hydra.main(config_path='configs/sine', config_name='sine_plot.yaml')
 def sine_plot_eval_iters(cfg):
     example = 'sine'
-    # plot_eval_iters(example, cfg, train=False)
-    # create_journal_results(example, cfg, train=False)
-    # overlay_training_losses(example, cfg)
-    
     create_gen_l2o_results_maml(example, cfg)
     percentile_plots_maml(example, cfg)
     get_maml_visualization_data(example, cfg)
 
 
 
-
-
-@hydra.main(config_path='configs/mnist', config_name='mnist_plot.yaml')
-def mnist_plot_eval_iters(cfg):
+@hydra.main(config_path='configs/mnist', config_name='mnist_plot_fp.yaml')
+def mnist_plot_eval_iters_fp(cfg):
     example = 'mnist'
-    # plot_eval_iters(example, cfg, train=False)
-    
-    # plot_eval_iters(example, cfg, train=False)
-    # create_journal_results(example, cfg, train=False)
-    # overlay_training_losses(example, cfg)
+    create_classical_results(example, cfg)
+
+
+@hydra.main(config_path='configs/mnist', config_name='mnist_plot_custom.yaml')
+def mnist_plot_eval_iters_custom(cfg):
+    example = 'mnist'
     create_classical_results(example, cfg)
 
 
@@ -2310,10 +2299,14 @@ if __name__ == '__main__':
         sys.argv[1] = base + 'unconstrained_qp/plots/${now:%Y-%m-%d}/${now:%H-%M-%S}'
         sys.argv = [sys.argv[0], sys.argv[1]]
         unconstrained_qp_plot_eval_iters()
-    elif sys.argv[1] == 'mnist':
+    elif sys.argv[1] == 'mnist_fp':
         sys.argv[1] = base + 'mnist/plots/${now:%Y-%m-%d}/${now:%H-%M-%S}'
         sys.argv = [sys.argv[0], sys.argv[1]]
-        mnist_plot_eval_iters()
+        mnist_plot_eval_iters_fp()
+    elif sys.argv[1] == 'mnist_custom':
+        sys.argv[1] = base + 'mnist/plots/${now:%Y-%m-%d}/${now:%H-%M-%S}'
+        sys.argv = [sys.argv[0], sys.argv[1]]
+        mnist_plot_eval_iters_custom()
     elif sys.argv[1] == 'quadcopter':
         sys.argv[1] = base + 'quadcopter/plots/${now:%Y-%m-%d}/${now:%H-%M-%S}'
         sys.argv = [sys.argv[0], sys.argv[1]]

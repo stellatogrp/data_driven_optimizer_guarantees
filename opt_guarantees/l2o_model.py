@@ -426,6 +426,9 @@ class L2Omodel(object):
                 nn_output = predict_y(perturbed_weights, input)
 
             z0 = nn_output
+
+            if self.algo == 'osqp' or self.algo == 'scs':
+                z0 = jnp.zeros(z0.size)
         if self.algo == 'scs':
             z0_full = jnp.ones(z0.size + 1)
             z0_full = z0_full.at[:z0.size].set(z0)
