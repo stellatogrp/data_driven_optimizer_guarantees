@@ -12,7 +12,7 @@ from opt_guarantees.utils.data_utils import recover_last_datetime
 
 from PEPit import PEP
 from PEPit.operators import LipschitzOperator
-from PEPit.examples.fixed_point_problems import krasnoselskii_mann_constant_step_sizes
+from PEPit.examples.fixed_point_problems import wc_krasnoselskii_mann_constant_step_sizes
 
 plt.rcParams.update({
     "text.usetex": True,
@@ -139,6 +139,7 @@ def create_classical_results(example, cfg):
     risk_plots(example, cfg)
     if cfg.worst_case:
         worst_case_gap_plot(example, cfg)
+    # pep()
 
 
 def worst_case_gap_plot(example, cfg):
@@ -475,7 +476,6 @@ def get_quantile(e_stars, percentile, eval_iters, worst, accuracies):
     quantile_curve = np.zeros(eval_iters)
     for k in range(eval_iters):
         where = np.where(e_stars[:,k] > percentile / 100)[0]
-        print('where', where)
         if where.size == 0:
             if worst is None:
                 quantile_curve[k] = max(accuracies)
@@ -701,10 +701,12 @@ def percentile_final_plots(percentile, cold_start_quantile, worst, bounds_list,
 
 def pep():
     gamma = 0.5
-    n = 100
-
-    pepit_tau, theoretical_tau = krasnoselskii_mann_constant_step_sizes(n=n, gamma=gamma, verbose=1)
-
+    n = 70
+    import time
+    t0 = time.time()
+    pepit_tau, theoretical_tau = wc_krasnoselskii_mann_constant_step_sizes(n=n, gamma=gamma, verbose=1)
+    t1 = time.time()
+    print('time to solve', t1 - t0)
     # # Instantiate PEP
     # problem = PEP()
 
@@ -1023,8 +1025,6 @@ def create_tables_classical(example, steps, percentiles, cold_start_quantile_lis
 
             if worst_curve is not None:
                 worst_cutoff = get_cutoff_tol(worst_curve, tols[j])
-                print('worst_cutoff', worst_cutoff)
-                print('steps', steps)
                 if worst_cutoff is not None:
                     worst_vals[j] = steps[worst_cutoff]
 

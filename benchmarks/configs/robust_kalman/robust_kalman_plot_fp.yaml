@@ -8,7 +8,7 @@ percentile_datetime: 2024-05-14/17-27-15 #2024-04-08/11-51-40
 
 # values used for paper results
 eval_iters: 301
-worst_case_iters: 1e12
+worst_case_iters: 1e10
 risk_accs: [0.1, 0.01, 0.001]
 
 # do not change these
