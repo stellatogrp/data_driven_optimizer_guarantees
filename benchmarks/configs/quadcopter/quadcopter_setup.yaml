@@ -29,7 +29,7 @@ num_rollouts: 110
 obstacle_tol: 0.1
 rollout_length: 100
 rollout_osqp_iters: 500
-save_gif: true
+save_gif: false #true
 seed: 42
 solve: true
 solve_acc_abs: 0.0001
