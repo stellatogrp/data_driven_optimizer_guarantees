@@ -111,11 +111,16 @@ class Workspace:
         # from the run cfg retrieve the following via the data cfg
         N_train, N_test = cfg.N_train, cfg.get('N_test', 100)
         N = N_train + N_test
-        self.num_samples = cfg.get('num_samples', N_train)
 
-        self.num_samples_test = cfg.get('num_samples_test', self.num_samples)
-        self.num_samples_train = cfg.get(
-            'num_samples_train', self.num_samples_test)
+        if all(key not in cfg.keys() for key in ['num_samples', 'num_samples_train', 'num_samples_test']):
+            self.num_samples_train = N_train
+            self.num_samples_test = N_test
+        else:
+            self.num_samples = cfg.get('num_samples', min(N_train, N_test))
+
+            self.num_samples_test = cfg.get('num_samples_test', self.num_samples)
+            self.num_samples_train = cfg.get(
+                'num_samples_train', self.num_samples_test)
 
         self.eval_batch_size_test = cfg.get(
             'eval_batch_size_test', self.num_samples_test)
@@ -438,7 +443,7 @@ class Workspace:
                 factors0[N_train:N, :, :], factors1[N_train:N, :])
 
             input_dict = dict(factor_static_bool=False,
-                              supervised=cfg.supervised,
+                              supervised=cfg.get('supervised', False),
                               rho=rho_vec,
                               q_mat_train=self.q_mat_train,
                               q_mat_test=self.q_mat_test,
@@ -1181,9 +1186,9 @@ class Workspace:
                 self.custom_visualize(z_plot, train, col)
 
         # closed loop control rollouts
-        if not train:
-            if self.closed_loop_rollout_dict is not None:
-                self.run_closed_loop_rollouts(col)
+        # if not train:
+        #     if self.closed_loop_rollout_dict is not None:
+        #         self.run_closed_loop_rollouts(col)
 
         # Specify the CSV file name
         filename = 'z_star_max2.csv'

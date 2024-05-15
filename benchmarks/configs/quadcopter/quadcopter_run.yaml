@@ -1,54 +1,20 @@
+N_train: 100 # the number of base problems
+N_test: 10 # the number of samples
+
 data:
   datetime: ''
-eval_every_x_epochs: 200
-save_every_x_epochs: 1
-test_every_x_epochs: 1
-write_csv_every_x_batches: 1
-epochs_jit: 10
-prediction_variable: w
-angle_anchors:
-- 0
 
-plot_iterates:
-- 0
-- 10
-- 20
-loss_method: fixed_k
-num_clusters: 10
-pretrain_alpha: false
-normalize_inputs: true
-normalize_alpha: other
-accuracies:
-- 0.1
-- 0.01
-- 0.001
-- 0.0001
-rho_x: 1
-scale: 1
-alpha_relax: 1
-skip_startup: false
-save_weights_flag: true
-
-supervised: true
 eval_batch_size_test: 50
-solve_c_num: 0
-N_train: 1000
-N_test: 1000
-num_samples: 1000
-# num_samples_train: 100
-# num_samples_test: 100
-train_unrolls: 5
-eval_unrolls: 20000 #25000
-num_rollouts: 0 #5
-closed_loop_budget: 15
+eval_unrolls: 200 #20000
+
+classical_nearest_neighbor: True
+classical: True
 
 pac_bayes_cfg:
-  init_var: 1e-3
-  c: 10.0
-  b: 100
   delta: 0.0001
   rep: True
-  penalty_coeff: 1.0
-  deterministic: True
-  target_pen: 0.3
   frac_solved_accs: fp_full
+
+# used for logging and plotting (not very important)
+plot_iterates: [0, 10, 20]
+accuracies: [.1, .01, .001, .0001]

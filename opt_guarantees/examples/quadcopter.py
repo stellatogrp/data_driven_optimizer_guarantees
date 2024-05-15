@@ -129,16 +129,17 @@ def run(run_cfg):
                                         x_min=x_min, x_max=x_max, u_min=u_min,
                                         u_max=u_max, Q=Q, QT=QT, R=R, delta_u=delta_u)
     plot_traj_3d_partial = partial(plot_traj_3d, T=T, goal_bound=setup_cfg['goal_bound'])
-    closed_loop_rollout_dict = dict(rollout_length=rollout_length, 
-                                    num_rollouts=run_cfg['num_rollouts'],
-                                    closed_loop_budget=run_cfg['closed_loop_budget'],
-                                    dynamics=quadcopter_dynamics, 
-                                    u_init_traj=jnp.zeros(nu),
-                                    system_constants=system_constants,
-                                    Q_ref=Q_ref,
-                                    obstacle_tol=obstacle_tol,
-                                    static_canon_mpc_osqp_partial=static_canon_mpc_osqp_partial,
-                                    plot_traj=plot_traj_3d_partial)
+    closed_loop_rollout_dict = {}
+    # closed_loop_rollout_dict = dict(rollout_length=rollout_length, 
+    #                                 num_rollouts=run_cfg['num_rollouts'],
+    #                                 closed_loop_budget=run_cfg['closed_loop_budget'],
+    #                                 dynamics=quadcopter_dynamics, 
+    #                                 u_init_traj=jnp.zeros(nu),
+    #                                 system_constants=system_constants,
+    #                                 Q_ref=Q_ref,
+    #                                 obstacle_tol=obstacle_tol,
+    #                                 static_canon_mpc_osqp_partial=static_canon_mpc_osqp_partial,
+    #                                 plot_traj=plot_traj_3d_partial)
 
     workspace = Workspace(algo, run_cfg, static_flag, static_dict, example, 
                           closed_loop_rollout_dict=closed_loop_rollout_dict,
