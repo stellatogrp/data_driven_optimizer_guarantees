@@ -1,0 +1,24 @@
+# to adjust for paper results
+N_train: 1000 # number of samples
+
+# there is no need to change any of the values below
+custom_loss: True # False is for the fixed-point residual, True for the max Euclidean distance
+
+data:
+  datetime: '' # gets the most recent setup data by default
+eval_unrolls: 500 # number of algorithm steps
+
+pac_bayes_cfg:
+  delta: 0.0001
+  gp: True # set to False if you want to use Pinsker's inequality instead of the kl inverse (the geometric program)
+  frac_solved_accs: fp_full # will get risk results for all values evenly on a log space between 10^-6 to 10^-2
+
+classical: True # do not change
+
+# used for visualizing
+iterates_visualize: [50]
+vis_num: 25
+
+# used for logging and plotting (not very important)
+plot_iterates: [0, 10, 20]
+accuracies: [1, .1, .01, .001, .0001]

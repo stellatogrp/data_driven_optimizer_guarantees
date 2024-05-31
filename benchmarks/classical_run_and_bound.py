@@ -35,8 +35,8 @@ def main_run_quadcopter(cfg):
     quadcopter.run(cfg)
 
 
-@hydra.main(config_path='configs/mnist', config_name='mnist_run.yaml')
-def main_run_mnist(cfg):
+@hydra.main(config_path='configs/mnist', config_name='mnist_run_fp.yaml')
+def main_run_mnist_fp(cfg):
     orig_cwd = hydra.utils.get_original_cwd()
     example = 'mnist'
     setup_datetime = cfg.data.datetime
@@ -48,10 +48,34 @@ def main_run_mnist(cfg):
     mnist.run(cfg)
 
 
+@hydra.main(config_path='configs/mnist', config_name='mnist_run_custom.yaml')
+def main_run_mnist_custom(cfg):
+    orig_cwd = hydra.utils.get_original_cwd()
+    example = 'mnist'
+    setup_datetime = cfg.data.datetime
+    if setup_datetime == '':
+        # get the most recent datetime and update datetimes
+        setup_datetime = recover_last_datetime(orig_cwd, example, 'data_setup')
+        cfg.data.datetime = setup_datetime
+    copy_data_file(example, setup_datetime)
+    mnist.run(cfg)
 
 
-@hydra.main(config_path='configs/robust_kalman', config_name='robust_kalman_run.yaml')
-def main_run_robust_kalman(cfg):
+@hydra.main(config_path='configs/robust_kalman', config_name='robust_kalman_run_fp.yaml')
+def main_run_robust_kalman_fp(cfg):
+    orig_cwd = hydra.utils.get_original_cwd()
+    example = 'robust_kalman'
+    setup_datetime = cfg.data.datetime
+    if setup_datetime == '':
+        # get the most recent datetime and update datetimes
+        setup_datetime = recover_last_datetime(orig_cwd, example, 'data_setup')
+        cfg.data.datetime = setup_datetime
+    copy_data_file(example, setup_datetime)
+    robust_kalman.run(cfg)
+
+
+@hydra.main(config_path='configs/robust_kalman', config_name='robust_kalman_run_custom.yaml')
+def main_run_robust_kalman_custom(cfg):
     orig_cwd = hydra.utils.get_original_cwd()
     example = 'robust_kalman'
     setup_datetime = cfg.data.datetime
@@ -69,16 +93,24 @@ if __name__ == '__main__':
         base = 'hydra.run.dir=/scratch/gpfs/rajivs/learn2warmstart/outputs/'
     elif sys.argv[2] == 'local':
         base = 'hydra.run.dir=outputs/'
-    if sys.argv[1] == 'robust_kalman':
+    if sys.argv[1] == 'robust_kalman_fp':
         sys.argv[1] = base + 'robust_kalman/train_outputs/${now:%Y-%m-%d}/${now:%H-%M-%S}'
         sys.argv = [sys.argv[0], sys.argv[1]]
-        main_run_robust_kalman()
+        main_run_robust_kalman_fp()
+    elif sys.argv[1] == 'robust_kalman_custom':
+        sys.argv[1] = base + 'robust_kalman/train_outputs/${now:%Y-%m-%d}/${now:%H-%M-%S}'
+        sys.argv = [sys.argv[0], sys.argv[1]]
+        main_run_robust_kalman_custom()
     elif sys.argv[1] == 'quadcopter':
         sys.argv[1] = base + 'quadcopter/train_outputs/${now:%Y-%m-%d}/${now:%H-%M-%S}'
         sys.argv = [sys.argv[0], sys.argv[1]]
         main_run_quadcopter()
-    elif sys.argv[1] == 'mnist':
+    elif sys.argv[1] == 'mnist_fp':
         sys.argv[1] = base + 'mnist/train_outputs/${now:%Y-%m-%d}/${now:%H-%M-%S}'
         sys.argv = [sys.argv[0], sys.argv[1]]
-        main_run_mnist()
+        main_run_mnist_fp()
+    elif sys.argv[1] == 'mnist_custom':
+        sys.argv[1] = base + 'mnist/train_outputs/${now:%Y-%m-%d}/${now:%H-%M-%S}'
+        sys.argv = [sys.argv[0], sys.argv[1]]
+        main_run_mnist_custom()
 

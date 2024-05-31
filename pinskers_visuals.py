@@ -58,7 +58,7 @@ def pinsker():
     # plt.show()
     plt.tight_layout()
     plt.title(r'cross section at $q=0.2$')
-    plt.xlabel(r'c')
+    plt.xlabel(r'c', fontsize=30)
     plt.savefig("pinsker/vary_c.pdf", bbox_inches='tight')
 
     # plt.xlabel('q')
@@ -83,7 +83,7 @@ def pinsker():
     # plt.show()
     plt.tight_layout()
     plt.title(r'cross section at $c=0.3$')
-    plt.xlabel(r'$q$')
+    plt.xlabel(r'$q$', fontsize=30)
     plt.savefig('pinsker/vary_q.pdf', bbox_inches='tight')
 
 
@@ -112,8 +112,8 @@ def plot_3d():
     colors = cmap.colors
     surf = ax.plot_surface(Q, C, pinsker, color=colors[0]) #, cmap='viridis')
     surf2 = ax.plot_surface(Q, C, klinv, color=colors[1])
-    ax.set_xlabel(r'$q$', labelpad=10)
-    ax.set_ylabel(r'$c$', labelpad=10)
+    ax.set_xlabel(r'$q$', labelpad=20)
+    ax.set_ylabel(r'$c$', labelpad=20)
     # ax.set_title('3D visualization', pad=-100)
     # ax.set_zlabel(r'$p^\star(q,c)$', labelpad=10)
     ax.view_init(elev=10, azim=-60)

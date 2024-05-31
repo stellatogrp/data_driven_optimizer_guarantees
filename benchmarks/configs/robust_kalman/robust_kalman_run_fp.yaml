@@ -1,8 +1,9 @@
 # to adjust for paper results
 N_train: 1000 # number of samples
-custom_loss: False # False is for the fixed-point residual, True for the max Euclidean distance
 
 # there is no need to change any of the values below
+custom_loss: False # False is for the fixed-point residual, True for the max Euclidean distance
+
 data:
   datetime: '' # gets the most recent setup data by default
 eval_unrolls: 500 # number of algorithm steps
@@ -15,7 +16,7 @@ pac_bayes_cfg:
 classical: True # do not change
 
 # used for visualizing
-iterates_visualize: [15]
+iterates_visualize: [50]
 vis_num: 25
 
 # used for logging and plotting (not very important)
