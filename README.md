@@ -15,17 +15,14 @@ We introduce a data-driven approach to analyze the performance of continuous opt
 ## Installation
 To install the opt_guarantees package, run
 ```
+git clone https://github.com/stellatogrp/data_driven_optimizer_guarantees.git
 $ pip install -e ".[dev]"
 ```
 
-## Getting started
-
+## Guarantees for classical optimizers
 
 ### Running experiments for classical optimizers for robust Kalman filtering
-To download the experiments, you should clone this repository with
-```
-git clone https://github.com/stellatogrp/data_driven_optimizer_guarantees.git
-```
+
 Run the following commands to obtain the guarantees for the fixed-point residual:
 
 - ```python benchmarks/parametric_setup.py robust_kalman local```
@@ -34,16 +31,40 @@ Run the following commands to obtain the guarantees for the fixed-point residual
 - ```python benchmarks/classical_run_and_bound.py robust_kalman_fp local``` (with `N_train` set to `1000` in the file `benchmarks/configs/robust_kalman/robust_kalman_run_fp.yaml`)
 - ```python benchmarks/plot_genL2O.py robust_kalman_fp local``` (with `cold_start_datetimes` set to a list of the datetimes that correspond to the folders of the previous three commands in the file `benchmarks/configs/robust_kalman/robust_kalman_plot_fp.yaml`)
 
+After this, run the following commands to obtain the guarantees for the maximum Euclidean metric:
+- ```python benchmarks/classical_run_and_bound.py robust_kalman_custom local``` (with `N_train` set to `10` in the file `benchmarks/configs/robust_kalman/robust_kalman_run_custom.yaml`)
+- ```python benchmarks/classical_run_and_bound.py robust_kalman_custom local``` (with `N_train` set to `100` in the file `benchmarks/configs/robust_kalman/robust_kalman_run_custom.yaml`)
+- ```python benchmarks/classical_run_and_bound.py robust_kalman_custom local``` (with `N_train` set to `1000` in the file `benchmarks/configs/robust_kalman/robust_kalman_run_custom.yaml`)
+- ```python benchmarks/plot_genL2O.py robust_kalman_custom local``` (with `cold_start_datetimes` set to a list of the datetimes that correspond to the folders of the previous three commands in the file `benchmarks/configs/robust_kalman/robust_kalman_plot_custom.yaml`)
 
 
+### Running experiments for classical optimizers for image deblurring
 
-After this, run the following commands to obtain the guarantees for the maximum Euclidean metric
-```
-python benchmarks/classical_run_and_bound.py robust_kalman_custom local
-python benchmarks/plot_genL2O.py robust_kalman_custom local
-```
+Run the following commands to obtain the guarantees for the fixed-point residual:
 
+- ```python benchmarks/parametric_setup.py mnist local```
+- ```python benchmarks/classical_run_and_bound.py mnist_fp local``` (with `N_train` set to `10` in the file `benchmarks/configs/mnist/mnist_run_fp.yaml`)
+- ```python benchmarks/classical_run_and_bound.py mnist_fp local``` (with `N_train` set to `100` in the file `benchmarks/configs/mnist/mnist_run_fp.yaml`)
+- ```python benchmarks/classical_run_and_bound.py mnist_fp local``` (with `N_train` set to `1000` in the file `benchmarks/configs/mnist/mnist_run_fp.yaml`)
+- ```python benchmarks/plot_genL2O.py mnist_fp local``` (with `cold_start_datetimes` set to a list of the datetimes that correspond to the folders of the previous three commands in the file `benchmarks/configs/mnist/mnist_plot_fp.yaml`)
 
+After this, run the following commands to obtain the guarantees for the maximum Euclidean metric:
+- ```python benchmarks/classical_run_and_bound.py mnist_custom local``` (with `N_train` set to `10` in the file `benchmarks/configs/mnist/mnist_run_custom.yaml`)
+- ```python benchmarks/classical_run_and_bound.py mnist_custom local``` (with `N_train` set to `100` in the file `benchmarks/configs/mnist/mnist_run_custom.yaml`)
+- ```python benchmarks/classical_run_and_bound.py mnist_custom local``` (with `N_train` set to `1000` in the file `benchmarks/configs/mnist/mnist_run_custom.yaml`)
+- ```python benchmarks/plot_genL2O.py mnist_custom local``` (with `cold_start_datetimes` set to a list of the datetimes that correspond to the folders of the previous three commands in the file `benchmarks/configs/mnist/mnist_plot_custom.yaml`)
+
+### Running experiments for classical optimizers for quadcopter control
+
+Run the following commands to obtain the guarantees for the fixed-point residual:
+
+- ```python benchmarks/parametric_setup.py quadcopter local```
+- ```python benchmarks/classical_run_and_bound.py quadcopter local``` (with `N_train` set to `10` in the file `benchmarks/configs/quadcopter/quadcopter_run.yaml`)
+- ```python benchmarks/classical_run_and_bound.py quadcopter local``` (with `N_train` set to `100` in the file `benchmarks/configs/quadcopter/quadcopter_run.yaml`)
+- ```python benchmarks/classical_run_and_bound.py quadcopter local``` (with `N_train` set to `1000` in the file `benchmarks/configs/quadcopter/quadcopter_run.yaml`)
+- ```python benchmarks/plot_genL2O.py quadcopter local``` (with `cold_start_datetimes` set to a list of the datetimes that correspond to the folders of the previous three commands in the file `benchmarks/configs/mnist/quadcopter_plot.yaml`)
+
+## Guarantees for learned optimizers
 
 ***
 #### ```parametric_setup.py```
@@ -62,7 +83,7 @@ outputs/robust_kalman/data_setup_outputs/2024-05-03/14-54-32/
 
 The second script ```classical_run_and_bound.py``` does the actual steps to get the probabilistic guarantees using the output from the prevous setup command.
 - Runs the fixed-point algorithm for ```eval_unrolls``` across the ```N_train``` number of problems.
-- Evaluates the empirical risk up to ```eval_unrolls``` number of iterations across $81$ tolerances evenly spaced out on a log-scale between $10^{-6}$ and $10^2$.
+- Evaluates the empirical risk up to ```eval_unrolls``` number of iterations across $81$ tolerances evenly spaced out on a log-scale between $10^{-6}$ and $10^2$ for the fixed-point residual. For other metrics we use a different set of tolerances (see our paper for details).
 - Computes the KL inverse for each algorithm step and each tolerance.
 
 In particular, in the config file, it takes a datetime that points to the setup output.
@@ -129,12 +150,12 @@ We automatically use the most recent output after each stage, but the specific d
 # Important files in the backend
 To reproduce our results, this part is not needed.
 
-- The ```l2ws/examples``` folder holds the code for each of the numerical experiments we run. The main purpose is to be used in conjunction with the ```l2ws_setup.py```.
+- The ```opt_guarantees/examples``` folder holds the code for each of the numerical experiments we run. The main purpose is to be used in conjunction with the ```parametric_setup.py```.
 
 - An important note is that the code is set to periodically evaluate the train and test sets; this is set in the ```eval_every_x_epochs``` entry in the run config file.
 When we evaluate, the fixed-point curves are updated (see the above files for the run config).
 
-We can also set the number of problems we run with C (for OSQP and SCS) with ```solve_c_num```. This will create the results that are used for our timing tables.
+
 ***
 
 The ```opt_guarantees``` folder holds the code that implements our architecture and allows for the training. In particular,
