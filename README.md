@@ -28,8 +28,12 @@ git clone https://github.com/stellatogrp/data_driven_optimizer_guarantees.git
 ```
 Run the following commands to obtain the guarantees for the fixed-point residual:
 
-- `python benchmarks/parametric_setup.py robust_kalman local`
-python benchmarks/classical_run_and_bound.py robust_kalman_fp local
+- ```python benchmarks/parametric_setup.py robust_kalman local```
+- ```python benchmarks/classical_run_and_bound.py robust_kalman_fp local``` with `N_train` set to `10`
+- ```python benchmarks/classical_run_and_bound.py robust_kalman_fp local``` with `N_train` set to `100`
+- ```python benchmarks/classical_run_and_bound.py robust_kalman_fp local``` with `N_train` set to `1000`
+
+
 python benchmarks/plot_genL2O.py robust_kalman_fp local
 
 
