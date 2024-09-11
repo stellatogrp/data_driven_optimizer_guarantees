@@ -97,56 +97,57 @@ To replicate our results in the paper, the only input that needs to be changed i
 
 #### ```l2o_calibrate.py```
 The third script ```l2o_calibrate.py``` does the calibration step to obtain the final generalization guarantees for learned optimizers.
-That is, given the trained optimizer (whose weights were saved in the last step)
-
-```
-outputs/robust_kalman/train_outputs/2024-05-04/15-14-05/
-```
-In this folder there are many metrics that are stored.
-We highlight the mains ones here (both the raw data in csv files and the corresponding plots in pdf files).
-
-
-- Fixed-point residuals over the test problems 
-
-    ```outputs/quadcopter/train_outputs/2022-06-04/15-14-05/plots/iters_compared_test.csv```
-    ```outputs/quadcopter/train_outputs/2022-06-04/15-14-05/plots/eval_iters_test.pdf```
-
-- Fixed-point residuals over the training problems 
-
-    ```outputs/quadcopter/train_outputs/2022-06-04/15-14-05/plots/iters_compared_train.csv```
-    ```outputs/quadcopter/train_outputs/2022-06-04/15-14-05/eval_iters_train.pdf```
-
-- Losses over epochs: for training this holds the average loss (for either loss function), for testing we plot the fixed-point residual at $k$ steps
-
-    ```outputs/quadcopter/train_outputs/2022-06-04/15-14-05/train_test_results.csv```
-    ```outputs/quadcopter/train_outputs/2022-06-04/15-14-05/losses_over_training.pdf```
-
-- The ```accuracies``` folder holds the results that are used for the tables. First, it holds the average number of iterations to reach the desired accuracies ($0.1$, $0.01$, $0.001$, and $0.0001$ by default).
-Second, it holds the reduction in iterations in comparison to the cold start.
-
-    ```outputs/quadcopter/2022-12-03/14-54-32/plots/accuracies```
-
-
+That is, given the trained optimizer (whose weights were saved in the last step), it runs the calibration step to get the final numerical bound.
 
 
 
 ***
 #### ```plot_genL2O.py```
 
-The third script ```plot.py``` plots the results across many different training runs.
-Each train run creates a new folder 
-```
-outputs/quadcopter/plots/2022-06-04/15-14-05/
-```
+The third script ```plot_genL2O.py``` plots the results across many different training runs.
 
 
 
-For the image deblurring task, we use the EMNIST dataset found at https://www.nist.gov/itl/products-and-services/emnist-dataset and use pip to install emnist (https://pypi.org/project/emnist/). 
+### Running experiments for learned optimizers for sparse coding
+
+Run the following commands to obtain the guarantees for the normalized MSE for one of (alista, lista, tilista, glista).
+Repeat this for each of the different types of learned optimizers (alista, lista, tilista, glista)
+- This option is set in the field ```algo``` (e.g., set ```algo: glista```)
+- ```python benchmarks/parametric_setup.py sparse_coding local```
+- ```python benchmarks/l2o_train.py sparse_coding local``` (this will produce an output file with date and time -- e.g., '2024-04-03/12-00-03')
+- ```python benchmarks/l2o_calibrate.py sparse_coding local`` (set load_weights_datetime to the output datetime from previous instruction: '2024-04-03/12-00-03')
+- ```python benchmarks/plot_genL2O.py sparse_coding local``` (with instructions as follows)
+
+In the plot cfg file for sine curves, set the following values to the learned datetime using the 4 datetime outputs from running the previous commands.
+output_datetimes:
+- 2024-04-03/15-35-37
+- 2024-04-03/15-34-21
+- 2024-04-03/14-37-03
+- 2024-04-02/11-10-58
+
+percentile_datetime_list: [2024-04-03/15-35-37, 2024-04-03/15-34-21, 2024-04-03/14-37-03, 2024-04-02/11-10-58]
+
+Set percentile_dt, percentile_nn_dt, nearest_neighbor_datetime, and cold_start_datetime all to the datetime used for any of the learned methods (as ISTA and the nearest neighbor methods are also run each time)
 
 
-Adjust the config files to try different settings; for example, the number of train/test data, number of evaluation iterations, and the number of training steps.
-Additionally, the neural network and problem setup configurations can be updated.
-We automatically use the most recent output after each stage, but the specific datetime can be inputted. Additionally, the final evaluation plot can take in multiple training datetimes in a list. See the commented out lines in the config files.
+### Running experiments for learned optimizers for sine curves
+
+Run the following commands to obtain the guarantees for the normalized MSE for one of (alista, lista, tilista, glista):
+- ```python benchmarks/parametric_setup.py sine local```
+- ```python benchmarks/l2o_train.py sine local``` (this will produce an output file with date and time -- e.g., '2024-04-02/07-25-28')
+- ```python benchmarks/l2o_calibrate.py sine local``` (set load_weights_datetime to the output datetime from previous instruction: '2024-04-03/12-00-03')
+- ```python benchmarks/l2o_train.py sine local``` (with ```train_unrolls=0``` to get the pretrained result: produce an output file with date and time -- e.g., '2024-03-31/15-52-10')
+- ```python benchmarks/plot_genL2O.py sine local``` (with details as follows)
+
+In the plot cfg file for sine curves, set the following values to the pretrained datetime
+- ```pretrain_datetime: 2024-03-31/15-52-10```
+- ```maml_pretrain_visualization_dt: 2024-03-31/15-52-10```
+
+In the plot cfg file for sine curves, set the following values to the learned datetime
+- ```output_datetimes: [2024-04-02/07-25-28]```
+- ```maml_visualization_dt: 2024-04-02/07-25-28```
+
+
 
 ***
 
@@ -174,3 +175,38 @@ All of the evaluation and training is run through
 - ```opt_guarantees/l2o_model.py``` holds the L2Omodel object, i.e., the architecture. This code allows us to 
     - evaluate the problems (both test and train) for any initialization technique
     - train the learned optimizers with given parameters
+
+
+# Description of important output files to monitor progress of all experiments
+```
+outputs/robust_kalman/train_outputs/2024-05-04/15-14-05/
+```
+In this folder there are many metrics that are stored.
+We highlight the mains ones here (both the raw data in csv files and the corresponding plots in pdf files).
+
+
+- Fixed-point residuals over the test problems 
+
+    ```outputs/quadcopter/train_outputs/2022-06-04/15-14-05/plots/iters_compared_test.csv```
+    ```outputs/quadcopter/train_outputs/2022-06-04/15-14-05/plots/eval_iters_test.pdf```
+
+- Fixed-point residuals over the training problems 
+
+    ```outputs/quadcopter/train_outputs/2022-06-04/15-14-05/plots/iters_compared_train.csv```
+    ```outputs/quadcopter/train_outputs/2022-06-04/15-14-05/eval_iters_train.pdf```
+
+- Losses over epochs: for training this holds the average loss (for either loss function), for testing we plot the fixed-point residual at $k$ steps
+
+    ```outputs/quadcopter/train_outputs/2022-06-04/15-14-05/train_test_results.csv```
+    ```outputs/quadcopter/train_outputs/2022-06-04/15-14-05/losses_over_training.pdf```
+
+- The ```accuracies``` folder holds the results that are used for the tables. First, it holds the average number of iterations to reach the desired accuracies ($0.1$, $0.01$, $0.001$, and $0.0001$ by default).
+Second, it holds the reduction in iterations in comparison to the cold start.
+
+# Other notes
+For the image deblurring task, we use the EMNIST dataset found at https://www.nist.gov/itl/products-and-services/emnist-dataset and use pip to install emnist (https://pypi.org/project/emnist/). 
+
+
+Adjust the config files to try different settings; for example, the number of train/test data, number of evaluation iterations, and the number of training steps.
+Additionally, the neural network and problem setup configurations can be updated.
+We automatically use the most recent output after each stage, but the specific datetime can be inputted. Additionally, the final evaluation plot can take in multiple training datetimes in a list. See the commented out lines in the config files.

@@ -24,22 +24,13 @@ epochs_jit: 2
 N_train: 50000
 N_test: 1000
 num_samples: 1000
-prediction_variable: w
-angle_anchors: [0]
 supervised: False
 plot_iterates: [0, 10, 20]
 loss_method: 'fixed_k' #'fixed_k' #'constant_sum'
-share_all: True
-num_clusters: 10
-pretrain_alpha: False
-normalize_inputs: True
-normalize_alpha: 'other'
+
 
 
 accuracies: [.1, .01, .001, .0001]
-rho_x: 1
-scale: 1
-alpha_relax: 1
 skip_startup: False #True
 
 save_weights_flag: True
