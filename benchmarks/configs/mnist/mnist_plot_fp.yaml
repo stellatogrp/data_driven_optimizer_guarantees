@@ -2,15 +2,15 @@ eval_iters: 500 #16000
 accuracies: fp_full
 
 cold_start_datetimes: 
-- 2024-05-15/15-02-31 # fp 10
-- 2024-05-15/15-01-07 # fp 100
-- 2024-05-15/14-58-06 # fp 1000
+- 2024-09-11/17-29-16 # fp 10
+- 2024-09-11/17-29-16 # fp 100
+- 2024-09-11/17-29-16 # fp 1000
 
 worst_case: True 
 custom_loss: False
-percentile_datetime: 2024-05-15/14-58-06
+percentile_datetime: 2024-09-11/17-29-16
 risk_accs: [0.1, 0.01, 0.001]
 
-worst_case_datetime: 2024-05-15/14-58-06
+worst_case_datetime: 2024-09-11/17-29-16
 worst_case_iters: 2e5
 percentile_ylabel: 'fixed-point residual'

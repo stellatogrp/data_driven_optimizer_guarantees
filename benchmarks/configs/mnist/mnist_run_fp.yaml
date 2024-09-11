@@ -1,5 +1,5 @@
 # to adjust for paper results
-N_train: 10 # number of samples
+N_train: 1000 # number of samples
 custom_loss: False # False is for the fixed-point residual, True for the max Euclidean distance
 
 pac_bayes_cfg:
