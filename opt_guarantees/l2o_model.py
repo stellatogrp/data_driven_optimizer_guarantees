@@ -46,6 +46,7 @@ class L2Omodel(object):
                  y_stars_train=None,
                  y_stars_test=None,
                  loss_method='fixed_k',
+                 alista_cfg=None,
                  algo_dict={}):
         dict = algo_dict
         self.key = 0

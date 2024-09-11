@@ -1,15 +1,16 @@
 nn_cfg:
   lr: 1e-3
   method: adam
+  intermediate_layer_sizes: [500, 500]
   batch_size: 100
-  epochs: 100 #1e6
+  epochs: 1e6
 
 data:
   datetime: ''
 
 train_unrolls: 10
 eval_unrolls: 10
-eval_every_x_epochs: 20
+eval_every_x_epochs: 30
 save_every_x_epochs: 1
 test_every_x_epochs: 1
 write_csv_every_x_batches: 1
@@ -23,11 +24,12 @@ supervised: True
 plot_iterates: [0, 5, 9]
 loss_method: 'fixed_k'
 
+
 accuracies: [.1, .01, .001, .0001]
 skip_startup: False
 
-
 pac_bayes_flag: False
+load_weights_datetime: '2024-09-11/15-36-37'
 nn_load_type: stochastic
 
 pac_bayes_cfg:
@@ -41,7 +43,7 @@ pac_bayes_cfg:
   deterministic: False
   frac_solved_accs: nmse_full
   target_pen: 0.01
-  skip_full: True
+  skip_full: False
   pac_bayes_num_samples: 20000
 lambd: 0.1
 save_weights_flag: True

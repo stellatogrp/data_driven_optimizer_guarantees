@@ -1,33 +1,36 @@
 nn_cfg:
   lr: 1e-3
   method: adam
-  batch_size: 100
-  epochs: 100 #1e6
+  intermediate_layer_sizes: [40, 40]
+  batch_size: 10
+  epochs: 1e6
 
 data:
   datetime: ''
 
-train_unrolls: 10
+train_unrolls: 2
 eval_unrolls: 10
-eval_every_x_epochs: 20
+eval_every_x_epochs: 50
 save_every_x_epochs: 1
 test_every_x_epochs: 1
 write_csv_every_x_batches: 1
 epochs_jit: 2
 N_train: 50000
 N_test: 100
-# num_samples: 1000
-num_samples_train: 100
-num_samples_test: 100
+num_samples: 100
+# num_samples_train: 1000
+# num_samples_test: 1000
 supervised: True
 plot_iterates: [0, 5, 9]
 loss_method: 'fixed_k'
+
 
 accuracies: [.1, .01, .001, .0001]
 skip_startup: False
 
 
 pac_bayes_flag: False
+load_weights_datetime: '2024-04-01/21-25-18'
 nn_load_type: stochastic
 
 pac_bayes_cfg:
@@ -36,13 +39,14 @@ pac_bayes_cfg:
   b: 100
   delta: 0.00001
   delta2: 0.00001
-  rep: True
   penalty_coeff: 1.0
-  deterministic: False
-  frac_solved_accs: nmse_full
-  target_pen: 0.01
-  skip_full: True
+  deterministic: False #True
+  frac_solved_accs: maml_full #[1.5, 1, 0.5, 0.1]
+  target_pen: 0.05
+  skip_full: False
   pac_bayes_num_samples: 20000
 lambd: 0.1
 save_weights_flag: True
-algo: alista
+algo: maml
+gamma: 0.01
+custom_loss: True

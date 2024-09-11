@@ -79,9 +79,9 @@ outputs/robust_kalman/data_setup_outputs/2024-05-03/14-54-32/
 ```
 
 ***
-#### ```classical_run_and_bound.py```
+#### ```l2o_train.py```
 
-The second script ```classical_run_and_bound.py``` does the actual steps to get the probabilistic guarantees using the output from the prevous setup command.
+The second script ```l2o_train.py``` trains the learned optimizer using the output from the prevous setup command.
 - Runs the fixed-point algorithm for ```eval_unrolls``` across the ```N_train``` number of problems.
 - Evaluates the empirical risk up to ```eval_unrolls``` number of iterations across $81$ tolerances evenly spaced out on a log-scale between $10^{-6}$ and $10^2$ for the fixed-point residual. For other metrics we use a different set of tolerances (see our paper for details).
 - Computes the KL inverse for each algorithm step and each tolerance.
@@ -94,6 +94,10 @@ Each run for a given $k$ and the loss function creates an output folder like
 To replicate our results in the paper, the only input that needs to be changed is the one that determines the number of samples.
 - ```N_train``` (an integer that is the number of samples)
 
+
+#### ```l2o_calibrate.py```
+The third script ```l2o_calibrate.py``` does the calibration step to obtain the final generalization guarantees for learned optimizers.
+That is, given the trained optimizer (whose weights were saved in the last step)
 
 ```
 outputs/robust_kalman/train_outputs/2024-05-04/15-14-05/
@@ -167,6 +171,6 @@ All of the evaluation and training is run through
 
     - the fixed-point algorithms follow the same form in case you want to try your own algorithm
 
-- ```opt_guarantees/l2o_model.py``` holds the L2WSmodel object, i.e., the architecture. This code allows us to 
+- ```opt_guarantees/l2o_model.py``` holds the L2Omodel object, i.e., the architecture. This code allows us to 
     - evaluate the problems (both test and train) for any initialization technique
-    - train the neural network weights with the given parameters: the number of fixed-point steps in the architecture $k$ (```train_unrolls```) and the training loss $`\ell^{\rm fp}_{\theta}`$ (```supervised=False```) or $`\ell^{\rm reg}_{\theta}`$ (```supervised=True```)
+    - train the learned optimizers with given parameters

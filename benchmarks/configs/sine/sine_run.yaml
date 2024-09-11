@@ -3,18 +3,7 @@ nn_cfg:
   method: adam
   intermediate_layer_sizes: [40, 40]
   batch_size: 10
-  epochs: 1e6
-  decay_lr: .1
-  min_lr: 1e-7
-  decay_every: 1e7
-
-plateau_decay:
-  min_lr: 1e-7
-  decay_factor: 5
-  avg_window_size: 5000 # in epochs
-  tolerance: -100 #1e-3
-  patience: 1
-
+  epochs: 100
 
 pretrain:
   pretrain_method: adam
@@ -37,27 +26,15 @@ N_test: 100
 num_samples: 100
 # num_samples_train: 1000
 # num_samples_test: 1000
-prediction_variable: w
-angle_anchors: [0]
 supervised: True
 plot_iterates: [0, 5, 9]
 loss_method: 'fixed_k' #'fixed_k' #'constant_sum'
-share_all: False
-num_clusters: 10
-pretrain_alpha: False
-normalize_inputs: False
-normalize_alpha: 'other'
+
 
 accuracies: [.1, .01, .001, .0001]
-rho_x: 1
-scale: 1
-alpha_relax: 1
 skip_startup: False
-
-sigma_nn: [0.0, 1e-6, 1e-5, 0.0001, 0.001, 0.01, .1, 1, 10]
-# pac_bayes_num_samples: 5
 pac_bayes_flag: False
-load_weights_datetime: '2024-04-01/21-25-18' #'2024-03-28/10-38-45' #'2024-02-26/14-46-35'
+# load_weights_datetime: '2024-04-01/21-25-18' #'2024-03-28/10-38-45' #'2024-02-26/14-46-35'
 nn_load_type: stochastic
 
 pac_bayes_cfg:
@@ -70,7 +47,7 @@ pac_bayes_cfg:
   deterministic: False #True
   frac_solved_accs: maml_full #[1.5, 1, 0.5, 0.1]
   target_pen: 0.05
-  skip_full: False
+  skip_full: True
   pac_bayes_num_samples: 20000
 lambd: 0.1
 save_weights_flag: True

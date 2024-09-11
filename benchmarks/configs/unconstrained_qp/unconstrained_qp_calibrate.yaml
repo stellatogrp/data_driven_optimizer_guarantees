@@ -3,7 +3,13 @@ nn_cfg:
   method: adam
   intermediate_layer_sizes: [10]
   batch_size: 100
-  epochs: 100
+  epochs: 1e6
+
+pretrain:
+  pretrain_method: adam
+  pretrain_stepsize: 1e-3
+  pretrain_iters: 0
+  pretrain_batches: 10
 
 data:
   datetime: ''
@@ -18,11 +24,16 @@ epochs_jit: 2
 N_train: 50000
 N_test: 1000
 num_samples: 1000
-
+prediction_variable: w
+angle_anchors: [0]
 supervised: False
 plot_iterates: [0, 10, 20]
-loss_method: 'fixed_k'
-
+loss_method: 'fixed_k' #'fixed_k' #'constant_sum'
+share_all: True
+num_clusters: 10
+pretrain_alpha: False
+normalize_inputs: True
+normalize_alpha: 'other'
 
 
 accuracies: [.1, .01, .001, .0001]
@@ -32,7 +43,7 @@ alpha_relax: 1
 skip_startup: False #True
 
 save_weights_flag: True
-# load_weights_datetime: '2024-04-03/12-00-03' #'2024-03-30/11-47-25'
+load_weights_datetime: '2024-04-03/12-00-03' #'2024-03-30/11-47-25'
 nn_load_type: stochastic
 
 pac_bayes_cfg:
